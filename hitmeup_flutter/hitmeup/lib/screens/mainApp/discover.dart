@@ -1,5 +1,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+
+import 'chat.dart';
+import 'friends.dart';
+import 'profile.dart';
+import 'requests.dart';
 import '../../theme/app_theme.dart';
 
 class SwipeCardScreen extends StatefulWidget {
@@ -15,6 +20,7 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
   static const double _maxDragDistance = 220;
   static const double _maxLift = 42;
   static const double _maxRotation = 0.14;
+  static const int _diamondBalance = 17;
 
   final List<ProfileCardData> _profiles = const [
     ProfileCardData(
@@ -53,6 +59,7 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
 
   Offset _dragOffset = Offset.zero;
   int _currentIndex = 0;
+  int _selectedBottomNavIndex = 0;
   bool _isAnimating = false;
 
   @override
@@ -67,23 +74,62 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
           'Discover',
           style: AppTextStyles.heading.copyWith(color: Colors.black),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: const Color(0xFF448AFF),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/diamond.png',
+                    width: 20,
+                    height: 20,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    '$_diamondBalance',
+                    style: TextStyle(
+                      color: Color(0xFF4F8FF7),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: _BottomNavBar(
+        selectedIndex: _selectedBottomNavIndex,
+        onItemTap: _handleBottomNavTap,
       ),
       body: DecoratedBox(
         decoration: const BoxDecoration(gradient: AppGradient.background),
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       return Stack(
                         clipBehavior: Clip.none,
-                        alignment: Alignment.center,
+                        alignment: Alignment.bottomCenter,
                         children: [
                           for (
                             int depth = math.min(2, _profiles.length - 1);
@@ -96,11 +142,15 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
                     },
                   ),
                 ),
-                const SizedBox(height: 8),
-                _BottomSwipeBar(
-                  onReject: () => _swipeCard(-1),
-                  onAccept: () => _swipeCard(1),
+                const SizedBox(height: 16),
+                Transform.translate(
+                  offset: const Offset(0, 0),
+                  child: _BottomSwipeBar(
+                    onReject: () => _swipeCard(-1),
+                    onAccept: () => _swipeCard(1),
+                  ),
                 ),
+                const SizedBox(height: 10),
               ],
             ),
           ),
@@ -113,9 +163,6 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
     final profile = _profiles[(_currentIndex + depth) % _profiles.length];
     final isTopCard = depth == 0;
     final rawHorizontalDrag = _dragOffset.dx;
-    final progress = isTopCard
-        ? (rawHorizontalDrag.abs() / _swipeThreshold).clamp(0.0, 1.0)
-        : 0.0;
     final constrainedHorizontalDrag = rawHorizontalDrag.clamp(
       -_maxDragDistance,
       _maxDragDistance,
@@ -124,9 +171,8 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
       -1.0,
       1.0,
     );
-    final baseScale = 1 - (depth * 0.04);
-    final scale = isTopCard ? 1.0 : baseScale + (progress * 0.04);
-    final verticalOffset = isTopCard ? 0.0 : 18.0 * depth - (progress * 18.0);
+    const double scale = 1.0;
+    const double verticalOffset = 0.0;
     final horizontalOffset = isTopCard ? rawHorizontalDrag : 0.0;
     final dragYOffset = isTopCard ? -normalizedDrag.abs() * _maxLift : 0.0;
     final rotation = isTopCard ? -normalizedDrag * _maxRotation : 0.0;
@@ -139,6 +185,7 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
         ..rotateZ(rotation)
         ..scale(scale),
       child: Align(
+        alignment: Alignment.bottomCenter,
         child: isTopCard
             ? GestureDetector(
                 onPanUpdate: _isAnimating
@@ -193,6 +240,35 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
       _isAnimating = false;
     });
   }
+
+  void _handleBottomNavTap(int index) {
+    if (index == _selectedBottomNavIndex) {
+      return;
+    }
+
+    final Widget? destination = switch (index) {
+      0 => const SwipeCardScreen(),
+      1 => const RequestsScreen(),
+      2 => const ChatScreen(),
+      3 => const FriendsScreen(),
+      4 => const ProfileScreen(),
+      _ => null,
+    };
+
+    if (destination == null) {
+      return;
+    }
+
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 220),
+        reverseTransitionDuration: const Duration(milliseconds: 180),
+        pageBuilder: (_, __, ___) => destination,
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
+    );
+  }
 }
 
 class _ProfileCard extends StatelessWidget {
@@ -205,7 +281,7 @@ class _ProfileCard extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: AspectRatio(
-        aspectRatio: 0.66,
+        aspectRatio: 0.60,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
           child: Stack(
@@ -232,21 +308,31 @@ class _ProfileCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
-                    vertical: 10,
+                    vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.blueBottom.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(14),
+                    color: const Color(0xFF7BC2D2),
+                    borderRadius: BorderRadius.circular(7),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.diamond_rounded,
-                        color: Colors.white,
-                        size: 18,
+                      const Text(
+                        '-',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 2),
+                      Image.asset(
+                        'assets/diamond.png',
+                        width: 18,
+                        height: 18,
+                        fit: BoxFit.contain,
+                      ),
+                      const SizedBox(width: 2),
                       Text(
                         '${profile.score}',
                         style: const TextStyle(
@@ -313,24 +399,27 @@ class _BottomSwipeBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 76,
+    return Container(
       width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
+          SizedBox(
+            width: 54,
+            height: 54,
             child: _BarIconButton(
               icon: Icons.thumb_down_alt_rounded,
               color: const Color.fromARGB(255, 233, 30, 33),
-              alignment: Alignment.centerLeft,
               onTap: onReject,
             ),
           ),
-          Expanded(
+          SizedBox(
+            width: 54,
+            height: 54,
             child: _BarIconButton(
               icon: Icons.thumb_up_alt_rounded,
               color: const Color.fromARGB(255, 29, 233, 182),
-              alignment: Alignment.centerRight,
               onTap: onAccept,
             ),
           ),
@@ -340,17 +429,79 @@ class _BottomSwipeBar extends StatelessWidget {
   }
 }
 
-class _BarIconButton extends StatelessWidget {
-  const _BarIconButton({
-    required this.icon,
-    required this.color,
-    required this.alignment,
+class _BottomNavBar extends StatelessWidget {
+  const _BottomNavBar({required this.selectedIndex, required this.onItemTap});
+
+  final int selectedIndex;
+  final ValueChanged<int> onItemTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 80,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _BottomNavItem(
+              imageAssetPath: 'assets/navbar/discoverSelected.png',
+              fallbackIcon: Icons.home_rounded,
+              selected: selectedIndex == 0,
+              onTap: () => onItemTap(0),
+            ),
+            _BottomNavItem(
+              imageAssetPath: 'assets/navbar/requests.png',
+              fallbackIcon: Icons.grid_view_rounded,
+              selected: selectedIndex == 1,
+              onTap: () => onItemTap(1),
+            ),
+            _BottomNavItem(
+              imageAssetPath: 'assets/navbar/chat.png',
+              fallbackIcon: Icons.chat_bubble_outline_rounded,
+              selected: selectedIndex == 2,
+              onTap: () => onItemTap(2),
+            ),
+            _BottomNavItem(
+              imageAssetPath: 'assets/navbar/friends.png',
+              fallbackIcon: Icons.groups_rounded,
+              selected: selectedIndex == 3,
+              onTap: () => onItemTap(3),
+            ),
+            _BottomNavItem(
+              imageAssetPath: 'assets/navbar/profile.png',
+              fallbackIcon: Icons.account_circle_outlined,
+              selected: selectedIndex == 4,
+              onTap: () => onItemTap(4),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomNavItem extends StatelessWidget {
+  const _BottomNavItem({
+    required this.imageAssetPath,
+    required this.fallbackIcon,
+    required this.selected,
     required this.onTap,
   });
 
-  final IconData icon;
-  final Color color;
-  final Alignment alignment;
+  final String imageAssetPath;
+  final IconData fallbackIcon;
+  final bool selected;
   final VoidCallback onTap;
 
   @override
@@ -358,14 +509,59 @@ class _BarIconButton extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: Align(
-          alignment: alignment,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Icon(icon, color: color, size: 40),
+        child: SizedBox(
+          width: 56,
+          height: 56,
+          child: Center(
+            child: SizedBox(
+              width: 40,
+              height: 40,
+              child: Image.asset(
+                imageAssetPath,
+                width: 32,
+                height: 32,
+                fit: BoxFit.fill,
+                errorBuilder: (context, error, stackTrace) {
+                  debugPrint(
+                    'Bottom nav asset failed: $imageAssetPath -> $error',
+                  );
+                  return Icon(
+                    fallbackIcon,
+                    color: Colors.black,
+                    size: 24,
+                  );
+                },
+              ),
+            ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BarIconButton extends StatelessWidget {
+  const _BarIconButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Center(
+          child: Icon(icon, color: color, size: 54),
         ),
       ),
     );

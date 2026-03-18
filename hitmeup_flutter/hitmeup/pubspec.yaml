@@ -23,6 +23,8 @@ flutter:
   assets:
     - assets/hitmeup.jpg
     - assets/google_icon.png
+    - assets/navbar/
+    - assets/
 
   # Optional: Add Nunito font from Google Fonts
   # fonts:
