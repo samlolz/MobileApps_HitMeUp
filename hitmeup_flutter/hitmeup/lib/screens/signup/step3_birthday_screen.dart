@@ -1,5 +1,5 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../widgets/common_widgets.dart';
 import '../../theme/app_theme.dart';
 import 'step2_gender_screen.dart';
@@ -13,18 +13,7 @@ class Step3BirthdayScreen extends StatefulWidget {
 
 class _Step3BirthdayScreenState extends State<Step3BirthdayScreen> {
   bool _showOnProfile = false;
-
-  final TextEditingController _monthController = TextEditingController();
-  final TextEditingController _dayController = TextEditingController();
-  final TextEditingController _yearController = TextEditingController();
-
-  @override
-  void dispose() {
-    _monthController.dispose();
-    _dayController.dispose();
-    _yearController.dispose();
-    super.dispose();
-  }
+  DateTime _selectedDate = DateTime(2002, 5, 8);
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +52,7 @@ class _Step3BirthdayScreenState extends State<Step3BirthdayScreen> {
                         color: Colors.white,
                       ),
                       const SizedBox(height: 40),
-                      _buildDateInputRow(),
+                      _buildDatePicker(),
                       const Spacer(),
                       Center(child: _buildShowOnProfile()),
                       const SizedBox(height: 24),
@@ -80,93 +69,19 @@ class _Step3BirthdayScreenState extends State<Step3BirthdayScreen> {
     );
   }
 
-  Widget _buildDateInputRow() {
+  Widget _buildDatePicker() {
     return Container(
+      height: 160,
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: AppColors.blueBottom, width: 1.5),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: _buildDateCell(
-              controller: _monthController,
-              hint: 'Month',
-              borderRight: true,
-              keyboardType: TextInputType.text,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z]')),
-                LengthLimitingTextInputFormatter(10),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: _buildDateCell(
-              controller: _dayController,
-              hint: 'DD',
-              borderRight: true,
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(2),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: _buildDateCell(
-              controller: _yearController,
-              hint: 'YYYY',
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(4),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDateCell({
-    required TextEditingController controller,
-    required String hint,
-    bool borderRight = false,
-    TextInputType keyboardType = TextInputType.text,
-    List<TextInputFormatter>? inputFormatters,
-  }) {
-    return Container(
-      height: 60,
-      decoration: BoxDecoration(
-        border: borderRight
-            ? const Border(
-                right: BorderSide(color: AppColors.blueBottom, width: 1.5),
-              )
-            : null,
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        inputFormatters: inputFormatters,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w400,
-          color: Colors.black87,
-        ),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(
-            fontSize: 18,
-            color: Colors.black54,
-          ),
-          border: InputBorder.none,
-          counterText: '',
-          contentPadding: const EdgeInsets.symmetric(vertical: 18),
-        ),
+      child: CupertinoDatePicker(
+        mode: CupertinoDatePickerMode.date,
+        initialDateTime: _selectedDate,
+        maximumDate: DateTime.now(),
+        backgroundColor: Colors.white,
+        onDateTimeChanged: (dt) => setState(() => _selectedDate = dt),
       ),
     );
   }

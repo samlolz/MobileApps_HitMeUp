@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/common_widgets.dart';
 import '../../theme/app_theme.dart';
-import '../home/home_screen.dart';
+import '../home/discover_screen.dart';
 
 class Step6InterestsScreen extends StatefulWidget {
   const Step6InterestsScreen({super.key});
