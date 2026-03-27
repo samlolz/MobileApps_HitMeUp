@@ -165,7 +165,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
                             child: Image.asset(
                               'assets/profilepic.png',
                               fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                              errorBuilder: (_, __, ___) => Container(
                                 color: Colors.grey.shade300,
                                 child: const Icon(Icons.person, size: 60, color: Colors.grey),
                               ),

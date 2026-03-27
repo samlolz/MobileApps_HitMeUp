@@ -153,7 +153,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 											_ProfileInfoRow(
 												label: 'My interests',
 												value: _interests.join('\n'),
+<<<<<<< HEAD:MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/hitmeup_flutter/hitmeup/lib/screens/mainApp/profile.dart
+=======
 												alignTop: true,
+>>>>>>> b08e7bd95fdc7cd8a471cf7b3f92860581c8f222:MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/hitmeup_flutter/hitmeup/lib/screens/mainApp/profile.dart
 											),
 										],
 									),
@@ -246,6 +249,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 }
 
 class _ProfileInfoRow extends StatelessWidget {
+<<<<<<< HEAD:MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/hitmeup_flutter/hitmeup/lib/screens/mainApp/profile.dart
+	const _ProfileInfoRow({required this.label, required this.value});
+
+	final String label;
+	final String value;
+=======
 	const _ProfileInfoRow({
 		required this.label,
 		required this.value,
@@ -255,10 +264,23 @@ class _ProfileInfoRow extends StatelessWidget {
 	final String label;
 	final String value;
 	final bool alignTop;
+>>>>>>> b08e7bd95fdc7cd8a471cf7b3f92860581c8f222:MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/hitmeup_flutter/hitmeup/lib/screens/mainApp/profile.dart
 
 	@override
 	Widget build(BuildContext context) {
 		return Row(
+<<<<<<< HEAD:MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/hitmeup_flutter/hitmeup/lib/screens/mainApp/profile.dart
+			crossAxisAlignment: CrossAxisAlignment.start,
+			children: [
+				SizedBox(
+					width: 120,
+					child: Text(
+						label,
+						style: const TextStyle(
+							fontSize: 18,
+							fontWeight: FontWeight.w600,
+							color: Color(0xFF202020),
+=======
 			crossAxisAlignment:
 				alignTop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
 			children: [
@@ -275,10 +297,20 @@ class _ProfileInfoRow extends StatelessWidget {
 								fontWeight: FontWeight.w600,
 								color: Color(0xFF202020),
 							),
+>>>>>>> b08e7bd95fdc7cd8a471cf7b3f92860581c8f222:MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/hitmeup_flutter/hitmeup/lib/screens/mainApp/profile.dart
 						),
 					),
 				),
 				Expanded(
+<<<<<<< HEAD:MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/hitmeup_flutter/hitmeup/lib/screens/mainApp/profile.dart
+					child: Text(
+						value,
+						style: TextStyle(
+							fontSize: 18,
+							height: 1.25,
+							fontWeight: FontWeight.w500,
+							color: Colors.black.withValues(alpha: 0.52),
+=======
 					child: Align(
 						alignment: Alignment.centerLeft,
 						child: Text(
@@ -289,6 +321,7 @@ class _ProfileInfoRow extends StatelessWidget {
 								fontWeight: FontWeight.w500,
 								color: Colors.black.withValues(alpha: 0.52),
 							),
+>>>>>>> b08e7bd95fdc7cd8a471cf7b3f92860581c8f222:MobileApps_HitMeUp-main/MobileApps_HitMeUp-main/hitmeup_flutter/hitmeup/lib/screens/mainApp/profile.dart
 						),
 					),
 				),
