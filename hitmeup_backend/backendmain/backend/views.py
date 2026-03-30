@@ -1,6 +1,7 @@
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db.models import Q
 from .models import (
 	community,
 	communitymessage,
@@ -36,6 +37,31 @@ from .serializers import (
 class userViewSet(viewsets.ModelViewSet):
 	queryset = user.objects.all()
 	serializer_class = userSerializer
+
+	@action(detail=False, methods=["post"], url_path="login")
+	def login(self, request):
+		identifier = str(request.data.get("identifier", "")).strip()
+		password = str(request.data.get("password", ""))
+
+		if not identifier or not password:
+			return Response(
+				{"detail": "identifier and password are required."},
+				status=status.HTTP_400_BAD_REQUEST,
+			)
+
+		matched_user = user.objects.filter(
+			Q(email__iexact=identifier) | Q(name__iexact=identifier),
+			password=password,
+		).first()
+
+		if matched_user is None:
+			return Response(
+				{"detail": "Invalid username/email or password."},
+				status=status.HTTP_401_UNAUTHORIZED,
+			)
+
+		serializer = self.get_serializer(matched_user)
+		return Response(serializer.data, status=status.HTTP_200_OK)
 
 	@action(detail=True, methods=["patch"], url_path="edit-user")
 	def edit_user(self, request, pk=None):

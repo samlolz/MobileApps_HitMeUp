@@ -1,9 +1,10 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import '../../services/api_config.dart';
+import '../../services/auth_session.dart';
 import '../../widgets/common_widgets.dart';
 import '../../theme/app_theme.dart';
 import '../mainApp/discover.dart';
@@ -19,19 +20,6 @@ class Step6InterestsScreen extends StatefulWidget {
     required this.location,
     this.meetGender,
   });
-
-  static String get _apiBaseUrl {
-    const overrideUrl = String.fromEnvironment('SIGNUP_API_BASE_URL');
-    if (overrideUrl.isNotEmpty) {
-      return overrideUrl;
-    }
-
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8000';
-    }
-
-    return 'http://127.0.0.1:8000';
-  }
 
   final String name;
   final String email;
@@ -257,7 +245,7 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
       _submitError = null;
     });
 
-    final uri = Uri.parse('${Step6InterestsScreen._apiBaseUrl}/api/users/');
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/users/');
 
     try {
       final response = await http
@@ -274,6 +262,13 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
       if (!mounted) return;
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
+        final createdUser = _tryParseUserObject(response.body);
+        if (createdUser != null) {
+          await AuthSession.instance.saveUser(createdUser);
+        }
+
+        if (!mounted) return;
+
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const SwipeCardScreen()),
@@ -291,7 +286,7 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
       if (!mounted) return;
       setState(() {
         _submitError =
-            'Cannot connect to backend. Ensure Django is running on ${Step6InterestsScreen._apiBaseUrl}.';
+        'Cannot connect to backend. Ensure Django is running on ${ApiConfig.baseUrl}.';
       });
     } finally {
       if (mounted) {
@@ -300,6 +295,18 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
         });
       }
     }
+  }
+
+  Map<String, dynamic>? _tryParseUserObject(String responseBody) {
+    try {
+      final decoded = jsonDecode(responseBody);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+    } catch (_) {
+      // Intentionally ignore parse errors and continue without cached session.
+    }
+    return null;
   }
 
   String _extractBackendError(String responseBody) {

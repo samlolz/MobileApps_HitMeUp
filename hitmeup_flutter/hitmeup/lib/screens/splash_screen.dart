@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../services/auth_session.dart';
 import '../widgets/common_widgets.dart';
 import '../theme/app_theme.dart';
+import 'mainApp/discover.dart';
 import 'auth/sign_in_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -15,6 +17,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
+  bool _isCheckingSession = true;
 
   @override
   void initState() {
@@ -31,6 +34,7 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _controller, curve: Curves.easeIn),
     );
     _controller.forward();
+    _restoreSession();
   }
 
   @override
@@ -40,15 +44,33 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _onLogoTap() {
+    if (_isCheckingSession) {
+      return;
+    }
+
+    final destination = AuthSession.instance.isLoggedIn
+        ? const SwipeCardScreen()
+        : const SignInScreen();
+
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const SignInScreen(),
+        pageBuilder: (_, __, ___) => destination,
         transitionsBuilder: (_, animation, __, child) =>
             FadeTransition(opacity: animation, child: child),
         transitionDuration: const Duration(milliseconds: 400),
       ),
     );
+  }
+
+  Future<void> _restoreSession() async {
+    await AuthSession.instance.load();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _isCheckingSession = false;
+    });
   }
 
   @override

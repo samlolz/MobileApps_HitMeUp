@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../services/auth_session.dart';
+import '../../theme/app_theme.dart';
 import 'chat.dart';
 import 'discover.dart';
 import 'editProfile.dart';
 import 'friends.dart';
 import 'requests.dart';
-import '../../theme/app_theme.dart';
+import '../auth/sign_in_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
 	const ProfileScreen({super.key});
@@ -94,6 +96,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
 						child: Column(
 							mainAxisSize: MainAxisSize.min,
 							children: [
+								Row(
+									mainAxisAlignment: MainAxisAlignment.spaceBetween,
+									children: [
+										const SizedBox(width: 48),
+										const Spacer(),
+										SizedBox(
+											width: 37,
+											height: 37,
+											child: GestureDetector(
+												onTap: _handleSignOut,
+												child: Image.asset(
+													'assets/SignOut.png',
+													fit: BoxFit.contain,
+												),
+											),
+										),
+									],
+								),
+								const SizedBox(height: 12),
 								Container(
 									width: 180,
 									height: 180,
@@ -241,6 +262,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 				transitionsBuilder: (_, animation, __, child) =>
 					FadeTransition(opacity: animation, child: child),
 			),
+		);
+	}
+
+	Future<void> _handleSignOut() async {
+		await AuthSession.instance.clear();
+		if (!mounted) {
+			return;
+		}
+		Navigator.pushAndRemoveUntil(
+			context,
+			MaterialPageRoute(builder: (_) => const SignInScreen()),
+			(route) => false,
 		);
 	}
 }

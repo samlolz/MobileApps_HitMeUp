@@ -1,11 +1,149 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+import '../../services/api_config.dart';
+import '../../services/auth_session.dart';
 import '../../widgets/common_widgets.dart';
 import '../../theme/app_theme.dart';
 import '../signup/step1_intro_screen.dart';
 import '../mainApp/discover.dart';
 
-class SignInScreen extends StatelessWidget {
+class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
+
+  @override
+  State<SignInScreen> createState() => _SignInScreenState();
+}
+
+class _SignInScreenState extends State<SignInScreen> {
+  final TextEditingController _identifierController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  bool _isSubmitting = false;
+  String? _submitError;
+
+  @override
+  void dispose() {
+    _identifierController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitSignIn() async {
+    if (_isSubmitting) {
+      return;
+    }
+
+    final identifier = _identifierController.text.trim();
+    final password = _passwordController.text;
+
+    if (identifier.isEmpty || password.isEmpty) {
+      setState(() {
+        _submitError = 'Please enter both username/email and password.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+      _submitError = null;
+    });
+
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/users/login/');
+
+    try {
+      final response = await http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'identifier': identifier,
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 12));
+
+      if (!mounted) {
+        return;
+      }
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final user = _tryParseUserObject(response.body);
+        if (user != null) {
+          await AuthSession.instance.saveUser(user);
+        }
+
+        if (!mounted) {
+          return;
+        }
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const SwipeCardScreen()),
+        );
+        return;
+      }
+
+      setState(() {
+        _submitError =
+            'Login failed (${response.statusCode}): ${_extractBackendError(response.body)}';
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _submitError =
+            'Cannot connect to backend. Ensure Django is running on ${ApiConfig.baseUrl}.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  Map<String, dynamic>? _tryParseUserObject(String responseBody) {
+    try {
+      final decoded = jsonDecode(responseBody);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+    } catch (_) {
+      // Intentionally ignored.
+    }
+    return null;
+  }
+
+  String _extractBackendError(String responseBody) {
+    try {
+      final decoded = jsonDecode(responseBody);
+      if (decoded is String && decoded.trim().isNotEmpty) {
+        return decoded;
+      }
+
+      if (decoded is Map<String, dynamic>) {
+        final detail = decoded['detail'];
+        if (detail is String && detail.trim().isNotEmpty) {
+          return detail;
+        }
+      }
+    } catch (_) {
+      // Keep fallback below.
+    }
+
+    final trimmed = responseBody.trim();
+    if (trimmed.isNotEmpty) {
+      return trimmed;
+    }
+
+    return 'Please check your credentials.';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,22 +176,35 @@ class SignInScreen extends StatelessWidget {
                   _buildTransparentField(
                     hint: 'Username or Email',
                     icon: Icons.person_outline_rounded,
+                    controller: _identifierController,
+                    textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 14),
                   _buildTransparentField(
                     hint: 'Password',
                     icon: Icons.lock_outline_rounded,
                     obscure: true,
+                    controller: _passwordController,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _submitSignIn(),
                   ),
+                  if (_submitError != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      _submitError!,
+                      style: const TextStyle(
+                        color: Color(0xFF8B0000),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   _buildButton(
                     label: 'LOGIN',
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const SwipeCardScreen()),
-                      );
-                    },
+                    onPressed: _isSubmitting ? null : _submitSignIn,
+                    isLoading: _isSubmitting,
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -95,7 +246,7 @@ class SignInScreen extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -115,7 +266,10 @@ class SignInScreen extends StatelessWidget {
   Widget _buildTransparentField({
     required String hint,
     required IconData icon,
+    required TextEditingController controller,
     bool obscure = false,
+    TextInputAction? textInputAction,
+    ValueChanged<String>? onSubmitted,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -127,7 +281,10 @@ class SignInScreen extends StatelessWidget {
         ),
       ),
       child: TextField(
+        controller: controller,
         obscureText: obscure,
+        textInputAction: textInputAction,
+        onSubmitted: onSubmitted,
         style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
         decoration: InputDecoration(
           hintText: hint,
@@ -140,7 +297,11 @@ class SignInScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildButton({required String label, required VoidCallback onPressed}) {
+  Widget _buildButton({
+    required String label,
+    required VoidCallback? onPressed,
+    bool isLoading = false,
+  }) {
     return SizedBox(
       width: double.infinity,
       height: 52,
@@ -155,15 +316,24 @@ class SignInScreen extends StatelessWidget {
           ),
         ),
         onPressed: onPressed,
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-            color: AppColors.textDark,
-          ),
-        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.textDark,
+                ),
+              )
+            : Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                  color: AppColors.textDark,
+                ),
+              ),
       ),
     );
   }
