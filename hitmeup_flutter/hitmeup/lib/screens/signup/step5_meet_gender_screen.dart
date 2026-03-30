@@ -3,7 +3,22 @@ import '../../widgets/common_widgets.dart';
 import 'step6_interests_screen.dart';
 
 class Step5MeetGenderScreen extends StatefulWidget {
-  const Step5MeetGenderScreen({super.key});
+  const Step5MeetGenderScreen({
+    super.key,
+    required this.name,
+    required this.email,
+    required this.password,
+    required this.gender,
+    required this.birthday,
+    required this.location,
+  });
+
+  final String name;
+  final String email;
+  final String password;
+  final String gender;
+  final DateTime birthday;
+  final String location;
 
   @override
   State<Step5MeetGenderScreen> createState() => _Step5MeetGenderScreenState();
@@ -119,7 +134,17 @@ class _Step5MeetGenderScreenState extends State<Step5MeetGenderScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const Step6InterestsScreen()),
+            MaterialPageRoute(
+              builder: (_) => Step6InterestsScreen(
+                name: widget.name,
+                email: widget.email,
+                password: widget.password,
+                gender: widget.gender,
+                birthday: widget.birthday,
+                location: widget.location,
+                meetGender: _selected,
+              ),
+            ),
           );
         },
         child: const Text(

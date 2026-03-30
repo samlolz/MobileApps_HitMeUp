@@ -5,7 +5,16 @@ import '../../theme/app_theme.dart';
 import 'step2_gender_screen.dart';
 
 class Step3BirthdayScreen extends StatefulWidget {
-  const Step3BirthdayScreen({super.key});
+  const Step3BirthdayScreen({
+    super.key,
+    required this.name,
+    required this.email,
+    required this.password,
+  });
+
+  final String name;
+  final String email;
+  final String password;
 
   @override
   State<Step3BirthdayScreen> createState() => _Step3BirthdayScreenState();
@@ -158,7 +167,14 @@ class _Step3BirthdayScreenState extends State<Step3BirthdayScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const Step2GenderScreen()),
+            MaterialPageRoute(
+              builder: (_) => Step2GenderScreen(
+                name: widget.name,
+                email: widget.email,
+                password: widget.password,
+                birthday: _selectedDate,
+              ),
+            ),
           );
         },
         child: const Text(

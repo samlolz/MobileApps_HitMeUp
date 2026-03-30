@@ -3,7 +3,18 @@ import '../../widgets/common_widgets.dart';
 import 'step4_location_screen.dart';
 
 class Step2GenderScreen extends StatefulWidget {
-  const Step2GenderScreen({super.key});
+  const Step2GenderScreen({
+    super.key,
+    required this.name,
+    required this.email,
+    required this.password,
+    required this.birthday,
+  });
+
+  final String name;
+  final String email;
+  final String password;
+  final DateTime birthday;
 
   @override
   State<Step2GenderScreen> createState() => _Step2GenderScreenState();
@@ -11,6 +22,7 @@ class Step2GenderScreen extends StatefulWidget {
 
 class _Step2GenderScreenState extends State<Step2GenderScreen> {
   String? _selectedGender;
+  String? _errorText;
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +68,16 @@ class _Step2GenderScreenState extends State<Step2GenderScreen> {
                       _buildGenderButton('Woman'),
                       const SizedBox(height: 14),
                       _buildGenderButton('Man'),
+                      if (_errorText != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          _errorText!,
+                          style: const TextStyle(
+                            color: Color(0xFFFFD8D8),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 240),
                       const Text(
                         'Make friends with people\nwho match your vibe!',
@@ -133,9 +155,26 @@ class _Step2GenderScreenState extends State<Step2GenderScreen> {
           ),
         ),
         onPressed: () {
+          if (_selectedGender == null) {
+            setState(() {
+              _errorText = 'Please select your gender first.';
+            });
+            return;
+          }
+
+          final backendGender = _selectedGender == 'Woman' ? 'female' : 'male';
+
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const Step4LocationScreen()),
+            MaterialPageRoute(
+              builder: (_) => Step4LocationScreen(
+                name: widget.name,
+                email: widget.email,
+                password: widget.password,
+                birthday: widget.birthday,
+                gender: backendGender,
+              ),
+            ),
           );
         },
         child: const Text(

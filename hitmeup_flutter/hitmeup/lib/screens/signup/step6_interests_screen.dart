@@ -1,10 +1,45 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
 import '../../widgets/common_widgets.dart';
 import '../../theme/app_theme.dart';
 import '../mainApp/discover.dart';
 
 class Step6InterestsScreen extends StatefulWidget {
-  const Step6InterestsScreen({super.key});
+  const Step6InterestsScreen({
+    super.key,
+    required this.name,
+    required this.email,
+    required this.password,
+    required this.gender,
+    required this.birthday,
+    required this.location,
+    this.meetGender,
+  });
+
+  static String get _apiBaseUrl {
+    const overrideUrl = String.fromEnvironment('SIGNUP_API_BASE_URL');
+    if (overrideUrl.isNotEmpty) {
+      return overrideUrl;
+    }
+
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8000';
+    }
+
+    return 'http://127.0.0.1:8000';
+  }
+
+  final String name;
+  final String email;
+  final String password;
+  final String gender;
+  final DateTime birthday;
+  final String location;
+  final String? meetGender;
 
   @override
   State<Step6InterestsScreen> createState() => _Step6InterestsScreenState();
@@ -12,6 +47,8 @@ class Step6InterestsScreen extends StatefulWidget {
 
 class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
   final Map<String, String?> _selectedInterests = {};
+  bool _isSubmitting = false;
+  String? _submitError;
 
   final Map<String, List<String>> _categories = {
     'Lifestyles': [
@@ -128,6 +165,17 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
                           ),
                         );
                       }),
+                      if (_submitError != null) ...[
+                        Text(
+                          _submitError!,
+                          style: const TextStyle(
+                            color: Color(0xFFFFD8D8),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       const SizedBox(height: 40),
                       _buildContinueButton(context),
                     ],
@@ -150,7 +198,7 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -182,6 +230,118 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
     );
   }
 
+  Future<void> _submitSignup() async {
+    if (_isSubmitting) return;
+
+    final selectedInterests = _selectedInterests.values
+        .where((interest) => interest != null)
+        .cast<String>()
+        .toList();
+
+    final payload = {
+      'name': widget.name,
+      'email': widget.email,
+      'password': widget.password,
+      'gender': widget.gender,
+      'birthday': widget.birthday.toIso8601String().split('T').first,
+      'location': widget.location,
+      'intrest1': selectedInterests.isNotEmpty ? selectedInterests[0] : '',
+      'intrest2': selectedInterests.length > 1 ? selectedInterests[1] : '',
+      'intrest3': selectedInterests.length > 2 ? selectedInterests[2] : '',
+      'intrest4': selectedInterests.length > 3 ? selectedInterests[3] : '',
+      'diamonds': 20,
+    };
+
+    setState(() {
+      _isSubmitting = true;
+      _submitError = null;
+    });
+
+    final uri = Uri.parse('${Step6InterestsScreen._apiBaseUrl}/api/users/');
+
+    try {
+      final response = await http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          )
+          .timeout(const Duration(seconds: 12));
+
+      debugPrint('Signup payload: ${jsonEncode(payload)}');
+      debugPrint('Signup response (${response.statusCode}): ${response.body}');
+
+      if (!mounted) return;
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const SwipeCardScreen()),
+          (route) => false,
+        );
+        return;
+      }
+
+      final backendMessage = _extractBackendError(response.body);
+      setState(() {
+        _submitError =
+            'Signup failed (${response.statusCode}): $backendMessage';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _submitError =
+            'Cannot connect to backend. Ensure Django is running on ${Step6InterestsScreen._apiBaseUrl}.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  String _extractBackendError(String responseBody) {
+    try {
+      final decoded = jsonDecode(responseBody);
+
+      if (decoded is List && decoded.isNotEmpty) {
+        return decoded.first.toString();
+      }
+
+      if (decoded is String && decoded.trim().isNotEmpty) {
+        return decoded;
+      }
+
+      if (decoded is Map<String, dynamic>) {
+        final lines = <String>[];
+        decoded.forEach((key, value) {
+          if (value is List && value.isNotEmpty) {
+            lines.add('$key: ${value.first}');
+          } else if (value is Map<String, dynamic> && value.isNotEmpty) {
+            lines.add('$key: ${value.values.first}');
+          } else if (value is String && value.trim().isNotEmpty) {
+            lines.add('$key: $value');
+          }
+        });
+
+        if (lines.isNotEmpty) {
+          return lines.join(' | ');
+        }
+      }
+    } catch (_) {
+      // Keep a generic message if body is not JSON.
+    }
+
+    final trimmed = responseBody.trim();
+    if (trimmed.isNotEmpty) {
+      return trimmed.length > 180 ? '${trimmed.substring(0, 180)}...' : trimmed;
+    }
+
+    return 'Please check your input data.';
+  }
+
   Widget _buildContinueButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
@@ -196,24 +356,25 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
             borderRadius: BorderRadius.circular(20),
           ),
         ),
-        onPressed: () {
-          final selectedInterests = _selectedInterests.values.where((interest) => interest != null).toList();
-          // TODO: Save or pass the selectedInterests
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const SwipeCardScreen()),
-            (route) => false,
-          );
-        },
-        child: const Text(
-          'CONTINUE',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.5,
-            color: Color(0xFF656565),
+        onPressed: _isSubmitting ? null : _submitSignup,
+        child: _isSubmitting
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFF656565),
+                ),
+              )
+            : const Text(
+                'CONTINUE',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                  color: Color(0xFF656565),
+                ),
           ),
-        ),
       ),
     );
   }

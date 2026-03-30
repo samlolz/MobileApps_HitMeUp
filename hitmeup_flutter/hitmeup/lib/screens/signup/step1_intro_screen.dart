@@ -2,8 +2,26 @@ import 'package:flutter/material.dart';
 import '../../widgets/common_widgets.dart';
 import 'step3_birthday_screen.dart';
 
-class Step1IntroScreen extends StatelessWidget {
+class Step1IntroScreen extends StatefulWidget {
   const Step1IntroScreen({super.key});
+
+  @override
+  State<Step1IntroScreen> createState() => _Step1IntroScreenState();
+}
+
+class _Step1IntroScreenState extends State<Step1IntroScreen> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  String? _errorText;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,11 +60,34 @@ class Step1IntroScreen extends StatelessWidget {
                         color: Colors.white,
                       ),
                       const SizedBox(height: 32),
-                      _buildField(hint: 'Input your name'),
+                      _buildField(
+                        hint: 'Input your name',
+                        controller: _nameController,
+                      ),
                       const SizedBox(height: 20),
-                      _buildField(hint: 'Input mail'),
+                      _buildField(
+                        hint: 'Input mail',
+                        controller: _emailController,
+                      ),
                       const SizedBox(height: 20),
-                      _buildField(hint: 'Input password', obscure: true),
+                      _buildField(
+                        hint: 'Input password',
+                        controller: _passwordController,
+                        obscure: true,
+                      ),
+                      if (_errorText != null) ...[
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            _errorText!,
+                            style: const TextStyle(
+                              color: Color(0xFFFFD8D8),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
                       const Spacer(),
                       _buildContinueButton(context),
                       const SizedBox(height: 24),
@@ -61,7 +102,11 @@ class Step1IntroScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildField({required String hint, bool obscure = false}) {
+  Widget _buildField({
+    required String hint,
+    required TextEditingController controller,
+    bool obscure = false,
+  }) {
     return Container(
       height: 53,
       decoration: BoxDecoration(
@@ -73,6 +118,7 @@ class Step1IntroScreen extends StatelessWidget {
         ),
       ),
       child: TextField(
+        controller: controller,
         obscureText: obscure,
         style: const TextStyle(
           fontSize: 19,
@@ -108,9 +154,37 @@ class Step1IntroScreen extends StatelessWidget {
           ),
         ),
         onPressed: () {
+          final name = _nameController.text.trim();
+          final email = _emailController.text.trim();
+          final password = _passwordController.text.trim();
+
+          if (name.isEmpty || email.isEmpty || password.isEmpty) {
+            setState(() {
+              _errorText = 'Please fill name, email, and password.';
+            });
+            return;
+          }
+
+          if (!email.contains('@')) {
+            setState(() {
+              _errorText = 'Please enter a valid email address.';
+            });
+            return;
+          }
+
+          setState(() {
+            _errorText = null;
+          });
+
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const Step3BirthdayScreen()),
+            MaterialPageRoute(
+              builder: (_) => Step3BirthdayScreen(
+                name: name,
+                email: email,
+                password: password,
+              ),
+            ),
           );
         },
         child: const Text(
