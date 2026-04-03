@@ -82,6 +82,94 @@ class communityViewSet(viewsets.ModelViewSet):
 	queryset = community.objects.all()
 	serializer_class = communitySerializer
 
+	@action(detail=True, methods=["post"], url_path="add-member")
+	def add_member(self, request, pk=None):
+		"""Add a user to a community"""
+		try:
+			community_obj = self.get_object()
+			user_id = request.data.get("user_id")
+
+			if not user_id:
+				return Response(
+					{"detail": "user_id is required."},
+					status=status.HTTP_400_BAD_REQUEST,
+				)
+
+			user_obj = user.objects.filter(id=user_id).first()
+			if not user_obj:
+				return Response(
+					{"detail": "User not found."},
+					status=status.HTTP_404_NOT_FOUND,
+				)
+
+			# Check if user is already a member
+			if community_obj.members.filter(id=user_id).exists():
+				return Response(
+					{"detail": "User is already a member of this community."},
+					status=status.HTTP_200_OK,
+				)
+
+			# Add user to community
+			community_obj.members.add(user_obj)
+			
+			# Update totalParticipants
+			community_obj.totalParticipants = community_obj.members.count()
+			community_obj.save(update_fields=['totalParticipants'])
+
+			return Response(
+				{"detail": "User added to community successfully.", "totalParticipants": community_obj.totalParticipants},
+				status=status.HTTP_200_OK,
+			)
+		except Exception as e:
+			return Response(
+				{"detail": f"Error adding user to community: {str(e)}"},
+				status=status.HTTP_400_BAD_REQUEST,
+			)
+
+	@action(detail=True, methods=["post"], url_path="remove-member")
+	def remove_member(self, request, pk=None):
+		"""Remove a user from a community"""
+		try:
+			community_obj = self.get_object()
+			user_id = request.data.get("user_id")
+
+			if not user_id:
+				return Response(
+					{"detail": "user_id is required."},
+					status=status.HTTP_400_BAD_REQUEST,
+				)
+
+			user_obj = user.objects.filter(id=user_id).first()
+			if not user_obj:
+				return Response(
+					{"detail": "User not found."},
+					status=status.HTTP_404_NOT_FOUND,
+				)
+
+			# Check if user is a member
+			if not community_obj.members.filter(id=user_id).exists():
+				return Response(
+					{"detail": "User is not a member of this community."},
+					status=status.HTTP_200_OK,
+				)
+
+			# Remove user from community
+			community_obj.members.remove(user_obj)
+			
+			# Update totalParticipants
+			community_obj.totalParticipants = community_obj.members.count()
+			community_obj.save(update_fields=['totalParticipants'])
+
+			return Response(
+				{"detail": "User removed from community successfully.", "totalParticipants": community_obj.totalParticipants},
+				status=status.HTTP_200_OK,
+			)
+		except Exception as e:
+			return Response(
+				{"detail": f"Error removing user from community: {str(e)}"},
+				status=status.HTTP_400_BAD_REQUEST,
+			)
+
 
 class communityMessageViewSet(viewsets.ModelViewSet):
 	queryset = communitymessage.objects.select_related("community", "sender").all()
@@ -92,7 +180,27 @@ class communityMessageViewSet(viewsets.ModelViewSet):
 		community_id = self.request.query_params.get("community")
 		if community_id:
 			queryset = queryset.filter(community_id=community_id)
-		return queryset
+
+		before_id = self.request.query_params.get("before_id")
+		limit_value = self.request.query_params.get("limit")
+
+		if before_id:
+			queryset = queryset.filter(id__lt=before_id)
+
+		if community_id and limit_value:
+			try:
+				limit_count = max(1, int(limit_value))
+			except ValueError:
+				limit_count = 20
+
+			queryset = queryset.order_by("-created_at")[:limit_count]
+			return list(queryset)[::-1]
+
+		if community_id and not limit_value:
+			queryset = queryset.order_by("created_at")
+			return queryset
+
+		return queryset.order_by("-created_at")
 
 
 class directChatViewSet(viewsets.ModelViewSet):

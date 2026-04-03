@@ -321,40 +321,7 @@ class _ChatScreenState extends State<ChatScreen> {
   int _diamondBalance = 17;
   int _selectedBottomNavIndex = 2;
   List<DirectChat> _directChats = [];
-
-  final List<_CommunityItemData> _communities = const [
-    _CommunityItemData(
-      id: 'comm_001',
-      title: 'Rblx Geng',
-      participants: '75 Participants',
-      imageUrl: 'https://i.pravatar.cc/240?img=11',
-    ),
-    _CommunityItemData(
-      id: 'comm_002',
-      title: 'Penyuka Horror',
-      participants: '24 Participants',
-      imageUrl: 'https://i.pravatar.cc/240?img=24',
-    ),
-    _CommunityItemData(
-      id: 'comm_003',
-      title: 'Tiktokers',
-      participants: '48 Participants',
-      imageUrl: 'https://i.pravatar.cc/240?img=41',
-    ),
-    _CommunityItemData(
-      id: 'comm_004',
-      title: 'Mabar ff',
-      participants: '50 Participants',
-      icon: Icons.groups_rounded,
-      iconBackground: Color(0xFFF53D84),
-    ),
-    _CommunityItemData(
-      id: 'comm_005',
-      title: 'Main Padel Yuk!',
-      participants: '15 Participants',
-      icon: Icons.groups_rounded,
-      iconBackground: Color(0xFFF53D84),
-    ),
+  List<_CommunityItemData> _communities = const [
     _CommunityItemData(
       id: 'create_new',
       title: 'Create a new\ncommunity',
@@ -380,6 +347,69 @@ class _ChatScreenState extends State<ChatScreen> {
     _hydrateDiamondsFromSession();
     _loadLoggedInUserDiamonds();
     _loadDirectChats();
+    _loadUserCommunities();
+  }
+
+  String _resolveCommunityImageUrl(dynamic rawPath) {
+    final value = (rawPath ?? '').toString().trim();
+    if (value.isEmpty) {
+      return 'assets/FallBackProfile.png';
+    }
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+
+    final base = ApiConfig.baseUrl.replaceAll(RegExp(r'/+$'), '');
+    final path = value.startsWith('/') ? value : '/$value';
+    return '$base$path';
+  }
+
+  Future<void> _loadUserCommunities() async {
+    final userId = AuthSession.instance.userId;
+    if (userId == null) {
+      return;
+    }
+
+    try {
+      final userData = await ChatService.fetchUser(userId);
+      final userCommunityIds = ((userData['communities'] as List?) ?? const [])
+          .map((id) => id.toString())
+          .toSet();
+
+      final allCommunities = await ChatService.fetchCommunities();
+      final userCommunities = allCommunities.where((community) {
+        final communityId = community['id']?.toString();
+        return communityId != null && userCommunityIds.contains(communityId);
+      }).map((community) {
+        final rawPicture = community['communityPicture'];
+        final hasPicture = rawPicture != null && rawPicture.toString().trim().isNotEmpty;
+        return _CommunityItemData(
+          id: (community['id'] ?? '').toString(),
+          title: (community['name'] ?? 'Community').toString(),
+          participants: '${community['totalParticipants'] ?? 0} Participants',
+          imageUrl: hasPicture ? _resolveCommunityImageUrl(rawPicture) : 'assets/FallBackProfile.png',
+          imageIsAsset: !hasPicture,
+        );
+      }).toList();
+
+      userCommunities.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+
+      if (!mounted) return;
+      setState(() {
+        _communities = [
+          ...userCommunities,
+          const _CommunityItemData(
+            id: 'create_new',
+            title: 'Create a new\ncommunity',
+            participants: '',
+            icon: Icons.add,
+            iconBackground: Color(0xFFD6E5EA),
+          ),
+        ];
+      });
+    } catch (_) {
+      // Keep only create tile when request fails.
+    }
   }
 
   void _hydrateDiamondsFromSession() {
@@ -671,7 +701,9 @@ class _ChatScreenState extends State<ChatScreen> {
     if (data.icon == Icons.add) {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const CreateCommunityScreen()),
-      );
+      ).then((_) {
+        _loadUserCommunities();
+      });
     } else {
       Navigator.of(context).push(
         MaterialPageRoute(
@@ -741,7 +773,9 @@ class _CommunityItemTile extends StatelessWidget {
                 decoration: const BoxDecoration(shape: BoxShape.circle),
                 clipBehavior: Clip.antiAlias,
                 child: data.imageUrl != null
-                    ? Image.network(data.imageUrl!, fit: BoxFit.cover)
+                  ? (data.imageIsAsset
+                    ? Image.asset(data.imageUrl!, fit: BoxFit.cover)
+                    : Image.network(data.imageUrl!, fit: BoxFit.cover))
                     : DecoratedBox(
                         decoration: BoxDecoration(
                           color: data.iconBackground ?? const Color(0xFFD6E5EA),
@@ -859,6 +893,7 @@ class _CommunityItemData {
     required this.title,
     required this.participants,
     this.imageUrl,
+    this.imageIsAsset = false,
     this.icon,
     this.iconBackground,
   });
@@ -867,6 +902,7 @@ class _CommunityItemData {
   final String title;
   final String participants;
   final String? imageUrl;
+  final bool imageIsAsset;
   final IconData? icon;
   final Color? iconBackground;
 }

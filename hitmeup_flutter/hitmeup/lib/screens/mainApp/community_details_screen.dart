@@ -1,30 +1,41 @@
-import 'package:flutter/material.dart';
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+import '../../services/chat_service.dart';
 import '../../theme/app_theme.dart';
 import 'chat_models.dart';
-import 'community_chat_screen.dart';
-import '../../services/chat_service.dart';
-import '../../services/auth_session.dart';
-import 'dart:typed_data';
 
-class CreateCommunityScreen extends StatefulWidget {
-  const CreateCommunityScreen({super.key});
+class CommunityDetailsScreen extends StatefulWidget {
+  final Community community;
+
+  const CommunityDetailsScreen({super.key, required this.community});
 
   @override
-  State<CreateCommunityScreen> createState() => _CreateCommunityScreenState();
+  State<CommunityDetailsScreen> createState() => _CommunityDetailsScreenState();
 }
 
-class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
+class _CommunityDetailsScreenState extends State<CommunityDetailsScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
   final TextEditingController _maxController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
+
   Uint8List? _pickedCommunityImageBytes;
+  String? _existingImageUrl;
+  bool _isLoading = true;
   bool _isPickingImage = false;
-  bool _isCreating = false;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCommunityDetails();
+  }
 
   @override
   void dispose() {
@@ -32,6 +43,45 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
     _descController.dispose();
     _maxController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadCommunityDetails() async {
+    final communityId = int.tryParse(widget.community.id);
+    if (communityId == null) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+      return;
+    }
+
+    try {
+      final community = await ChatService.fetchCommunityById(communityId);
+      if (!mounted) {
+        return;
+      }
+
+      _nameController.text = community['name']?.toString() ?? widget.community.name;
+      _descController.text = community['description']?.toString() ?? '';
+      _maxController.text = community['maxParticipants']?.toString() ?? '';
+      _existingImageUrl = community['communityPicture'] as String?;
+
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      _nameController.text = widget.community.name;
+      _descController.text = '';
+      _maxController.text = widget.community.participants.toString();
+      _existingImageUrl = widget.community.imageUrl;
+
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -44,13 +94,11 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
         elevation: 0,
         titleSpacing: 8,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, 
-          size: 25, 
-          color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 25, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Create a new community',
+          'Community details',
           style: TextStyle(
             fontSize: 25,
             fontWeight: FontWeight.bold,
@@ -63,10 +111,12 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
         decoration: const BoxDecoration(gradient: AppGradient.background),
         child: SafeArea(
           top: false,
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Container(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Container(
                       padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -77,9 +127,9 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
                       ),
                       child: Column(
                         children: [
-                          // Profile picture
                           Container(
-                            width: 110, height: 110,
+                            width: 110,
+                            height: 110,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: Colors.grey.shade200,
@@ -87,19 +137,23 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
                             clipBehavior: Clip.antiAlias,
                             child: _pickedCommunityImageBytes != null
                                 ? Image.memory(_pickedCommunityImageBytes!, fit: BoxFit.cover)
-                                : const Icon(Icons.person, size: 70, color: AppColors.textDark),
+                                : _existingImageUrl != null && _existingImageUrl!.isNotEmpty
+                                    ? Image.network(
+                                        _existingImageUrl!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => const Icon(Icons.people_rounded, size: 70, color: AppColors.textDark),
+                                      )
+                                    : const Icon(Icons.people_rounded, size: 70, color: AppColors.textDark),
                           ),
                           const SizedBox(height: 8),
                           TextButton(
                             onPressed: _isPickingImage ? null : _handleChangeCommunityPictureTap,
                             child: const Text(
-                              'Change Profile Picture',
+                              'Change Community Picture',
                               style: TextStyle(color: AppColors.blueBottom, fontSize: 14),
                             ),
                           ),
                           const SizedBox(height: 8),
-
-                          // Name field
                           Container(
                             width: 211,
                             height: 34,
@@ -114,11 +168,7 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
                               expands: true,
                               minLines: null,
                               maxLines: null,
-                              style: const TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textDark,
-                              ),
+                              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textDark),
                               decoration: const InputDecoration(
                                 hintText: 'Community name',
                                 hintStyle: TextStyle(color: AppColors.textGrey, fontSize: 17),
@@ -129,8 +179,6 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
                             ),
                           ),
                           const SizedBox(height: 20),
-
-                          // Community description label
                           const Text(
                             'Community description',
                             textAlign: TextAlign.center,
@@ -141,8 +189,6 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
                             ),
                           ),
                           const SizedBox(height: 6),
-
-                          // Description input
                           Container(
                             width: 285,
                             height: 26,
@@ -167,8 +213,6 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
-
-                          // Maximum participants label
                           const Text(
                             'Maximum participants',
                             textAlign: TextAlign.center,
@@ -179,8 +223,6 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
                             ),
                           ),
                           const SizedBox(height: 6),
-
-                          // Max participants input
                           Container(
                             width: 285,
                             height: 26,
@@ -207,18 +249,17 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
                             ),
                           ),
                           const SizedBox(height: 28),
-
-                          // Create button
                           SizedBox(
-                            width: 180, height: 50,
+                            width: 180,
+                            height: 50,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.pinkTop,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                                 elevation: 0,
                               ),
-                              onPressed: _isCreating ? null : _handleCreateCommunity,
-                              child: _isCreating
+                              onPressed: _isSaving ? null : _handleSaveCommunity,
+                              child: _isSaving
                                   ? const SizedBox(
                                       width: 20,
                                       height: 20,
@@ -228,7 +269,7 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
                                       ),
                                     )
                                   : const Text(
-                                      'Create',
+                                      'Save',
                                       style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
                                     ),
                             ),
@@ -238,8 +279,8 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
                     ),
                   ),
                 ),
-              ),
-          ),
+        ),
+      ),
     );
   }
 
@@ -276,6 +317,7 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
 
       setState(() {
         _pickedCommunityImageBytes = pickedBytes;
+        _existingImageUrl = null;
       });
     } catch (_) {
       if (!mounted) {
@@ -343,9 +385,7 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
       builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Gallery Permission Needed'),
-          content: const Text(
-            'Please allow gallery access so you can choose a profile picture.',
-          ),
+          content: const Text('Please allow gallery access so you can choose a community picture.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -381,11 +421,18 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
     return false;
   }
 
-  Future<void> _handleCreateCommunity() async {
-    // Validate inputs
+  Future<void> _handleSaveCommunity() async {
+    final communityId = int.tryParse(widget.community.id);
     final name = _nameController.text.trim();
     final description = _descController.text.trim();
     final maxParticipantsStr = _maxController.text.trim();
+
+    if (communityId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid community id')),
+      );
+      return;
+    }
 
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -410,11 +457,12 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
     }
 
     setState(() {
-      _isCreating = true;
+      _isSaving = true;
     });
 
     try {
-      final createdCommunity = await ChatService.createCommunity(
+      final updatedCommunity = await ChatService.updateCommunity(
+        communityId: communityId,
         name: name,
         description: description,
         maxParticipants: maxParticipants,
@@ -422,60 +470,37 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
         pictureName: _pickedCommunityImageBytes != null ? 'community_${DateTime.now().millisecondsSinceEpoch}.jpg' : null,
       );
 
-      if (!mounted) return;
-
-      // Extract the community ID from response
-      final communityId = createdCommunity['id'];
-      
-      // Add creator as a member of the community
-      final userId = AuthSession.instance.userId;
-      if (userId != null) {
-        try {
-          await ChatService.addUserToCommunity(
-            userId: userId,
-            communityId: communityId,
-          );
-        } catch (e) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Warning: Could not add you as a member: ${e.toString()}'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
+      if (!mounted) {
+        return;
       }
-      
-      // Create Community object for navigation
-      final community = Community(
-        id: communityId.toString(),
-        name: name,
-        participants: maxParticipants,
-      );
-
-      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Community "${name}" created successfully!')),
+        SnackBar(content: Text('Community "$name" updated successfully!')),
       );
 
-      Navigator.pushReplacement(
+      Navigator.pop(
         context,
-        MaterialPageRoute(builder: (_) => CommunityChatScreen(community: community)),
+        Community(
+          id: updatedCommunity['id'].toString(),
+          name: updatedCommunity['name']?.toString() ?? name,
+          participants: updatedCommunity['totalParticipants'] is int
+              ? updatedCommunity['totalParticipants'] as int
+              : int.tryParse(updatedCommunity['totalParticipants'].toString()) ?? widget.community.participants,
+          imageUrl: updatedCommunity['communityPicture'] as String? ?? _existingImageUrl,
+        ),
       );
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to create community: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error updating community: $e')),
       );
     } finally {
       if (mounted) {
         setState(() {
-          _isCreating = false;
+          _isSaving = false;
         });
       }
     }

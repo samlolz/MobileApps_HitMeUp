@@ -28,8 +28,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   static const double _topLoadThreshold = 120.0;
   static const String _galleryPermissionMessage =
       'Please allow gallery access so you can choose an image to send.';
-  static const String _cameraPermissionMessage =
-      'Please allow camera access so you can take a picture to send.';
     static const String _microphonePermissionMessage =
       'Please allow microphone access so you can record voice messages.';
 
@@ -330,11 +328,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
 
     try {
-      final hasPermission = await _ensureCameraPermission();
-      if (!hasPermission || !mounted) {
-        return;
-      }
-
       if (mounted) {
         setState(() {
           _isPickingImage = true;
@@ -377,6 +370,12 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Camera is not available yet.')),
+        );
+      }
+    } on PlatformException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Camera permission or access issue: ${e.message ?? e.code}')),
         );
       }
     } catch (e) {
@@ -713,21 +712,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     return _showGalleryPermissionSettingsDialog();
   }
 
-  Future<bool> _ensureCameraPermission() async {
-    var status = await Permission.camera.status;
-    if (status.isGranted) {
-      return true;
-    }
-    if (status.isDenied || status.isRestricted) {
-      status = await Permission.camera.request();
-    }
-    if (status.isGranted) {
-      return true;
-    }
-
-    return _showCameraPermissionSettingsDialog();
-  }
-
   Future<bool> _showGalleryPermissionSettingsDialog() async {
     final shouldOpenSettings = await showDialog<bool>(
       context: context,
@@ -735,46 +719,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         return AlertDialog(
           title: const Text('Gallery Permission Needed'),
           content: const Text(_galleryPermissionMessage),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Open Settings'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (shouldOpenSettings == true) {
-      try {
-        await openAppSettings();
-      } on MissingPluginException {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Open Settings is unavailable right now. Please fully restart the app and try again.',
-              ),
-            ),
-          );
-        }
-      }
-    }
-
-    return false;
-  }
-
-  Future<bool> _showCameraPermissionSettingsDialog() async {
-    final shouldOpenSettings = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Camera Permission Needed'),
-          content: const Text(_cameraPermissionMessage),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -1380,7 +1324,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         children: [
           IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                size: 18, color: Colors.black),
+                size: 25, color: Colors.black),
             onPressed: () => Navigator.pop(context),
           ),
           CircleAvatar(
@@ -1644,7 +1588,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                       children: [
                         Text(
                           time,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 10,
                             color: Colors.black45,
                           ),

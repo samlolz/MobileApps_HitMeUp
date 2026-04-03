@@ -114,17 +114,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
-            automaticallyImplyLeading: true,
+            automaticallyImplyLeading: false,
             backgroundColor: Colors.white,
             surfaceTintColor: Colors.white,
             elevation: 0,
-            title: const Text(
+            title: Text(
               'Edit Profile',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
+                style: AppTextStyles.heading.copyWith(color: Colors.black),
             ),
           ),
           body: SafeArea(

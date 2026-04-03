@@ -1,30 +1,107 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
+import '../../services/chat_service.dart';
+import '../../services/auth_session.dart';
 
-class CommunityScreen extends StatelessWidget {
+class CommunityScreen extends StatefulWidget {
 	const CommunityScreen({super.key});
 
-	static const List<_CommunityRowData> _communityRows = [
-		_CommunityRowData(
-			title: 'Teman Jakarta',
-			description: 'CARI TEMAN DEARAH JAKARTA',
-			participants: '123.000 users',
-			imageUrl: 'https://i.pravatar.cc/180?img=15',
-		),
-		_CommunityRowData(
-			title: 'VESPA RIDING COMMUNITY JKT',
-			description: 'RIDING BARENG SARI KALI',
-			participants: '51.027 users',
-			imageUrl: 'https://i.pravatar.cc/180?img=31',
-		),
-		_CommunityRowData(
-			title: 'JAKARTA PADEL SOCIETY',
-			description: 'GASSS PADEELLL JKTTT',
-			participants: '2.003 users',
-			imageUrl: 'https://i.pravatar.cc/180?img=46',
-		),
-	];
+	@override
+	State<CommunityScreen> createState() => _CommunityScreenState();
+}
+
+class _CommunityScreenState extends State<CommunityScreen> {
+	late TextEditingController _searchController;
+	List<_CommunityRowData> _allCommunities = [];
+	List<_CommunityRowData> _filteredCommunities = [];
+	bool _isLoading = true;
+	String? _errorMessage;
+
+	@override
+	void initState() {
+		super.initState();
+		_searchController = TextEditingController();
+		_searchController.addListener(_filterCommunities);
+		_fetchCommunities();
+	}
+
+	@override
+	void dispose() {
+		_searchController.dispose();
+		super.dispose();
+	}
+
+	Future<void> _fetchCommunities() async {
+		try {
+			setState(() {
+				_isLoading = true;
+				_errorMessage = null;
+			});
+
+			final communities = await ChatService.fetchCommunities();
+			
+			final communityRows = communities.map((community) {
+				final hasImage = community['communityPicture'] != null;
+				return _CommunityRowData(
+					id: community['id'],
+					title: community['name'] ?? 'Unknown Community',
+					description: community['description'] ?? 'No description',
+					participants: '${community['totalParticipants'] ?? 0} users',
+					imageUrl: hasImage ? _resolveCommunityImageUrl(community['communityPicture']) : 'assets/FallBackProfile.png',
+					isAsset: !hasImage,
+				);
+			}).toList();
+
+			setState(() {
+				_allCommunities = communityRows;
+				_filteredCommunities = communityRows;
+				_isLoading = false;
+			});
+		} catch (e) {
+			setState(() {
+				_errorMessage = 'Failed to load communities: $e';
+				_isLoading = false;
+			});
+		}
+	}
+
+	String _extractBaseUrl() {
+		const overrideUrl = String.fromEnvironment('SIGNUP_API_BASE_URL');
+		if (overrideUrl.isNotEmpty) {
+			return overrideUrl;
+		}
+		return 'http://10.0.2.2:8000';
+	}
+
+	String _resolveCommunityImageUrl(dynamic rawPath) {
+		final value = (rawPath ?? '').toString().trim();
+		if (value.isEmpty) {
+			return 'assets/FallBackProfile.png';
+		}
+
+		if (value.startsWith('http://') || value.startsWith('https://')) {
+			return value;
+		}
+
+		final base = _extractBaseUrl().replaceAll(RegExp(r'/+$'), '');
+		final path = value.startsWith('/') ? value : '/$value';
+		return '$base$path';
+	}
+
+	void _filterCommunities() {
+		final query = _searchController.text.toLowerCase();
+		setState(() {
+			if (query.isEmpty) {
+				_filteredCommunities = _allCommunities;
+			} else {
+				_filteredCommunities = _allCommunities.where((community) {
+					return community.title.toLowerCase().contains(query) ||
+						community.description.toLowerCase().contains(query);
+				}).toList();
+			}
+		});
+	}
 
 	@override
 	Widget build(BuildContext context) {
@@ -34,6 +111,7 @@ class CommunityScreen extends StatelessWidget {
 				automaticallyImplyLeading: false,
 				backgroundColor: const Color.fromARGB(255, 255, 255, 255),
 				elevation: 0,
+        titleSpacing: 8,
 				leading: IconButton(
 					onPressed: () => Navigator.of(context).maybePop(),
 					icon: const Icon(Icons.arrow_back_ios_new_rounded),
@@ -62,17 +140,18 @@ class CommunityScreen extends StatelessWidget {
 													color: Colors.white,
 													borderRadius: BorderRadius.circular(12),
 												),
-												child: const Row(
+												child: Row(
 													children: [
-														Icon(
+														const Icon(
 															Icons.search_rounded,
 															color: Colors.black,
 															size: 22,
 														),
-														SizedBox(width: 6),
+														const SizedBox(width: 6),
 														Expanded(
 															child: TextField(
-																decoration: InputDecoration(
+																controller: _searchController,
+																decoration: const InputDecoration(
 																	isCollapsed: true,
 																	hintText: 'Search communities',
 																	hintStyle: TextStyle(
@@ -82,7 +161,7 @@ class CommunityScreen extends StatelessWidget {
 																	),
 																	border: InputBorder.none,
 																),
-																style: TextStyle(
+																style: const TextStyle(
 																	color: AppColors.textDark,
 																	fontSize: 16,
 																	fontWeight: FontWeight.w600,
@@ -94,17 +173,7 @@ class CommunityScreen extends StatelessWidget {
 											),
 											const SizedBox(height: 10),
 											Expanded(
-												child: ListView.separated(
-													itemCount: _communityRows.length,
-													separatorBuilder: (_, __) => const SizedBox(height: 10),
-													itemBuilder: (context, index) {
-														final row = _communityRows[index];
-														return _CommunityListTile(
-															data: row,
-															onTap: () => _showJoinCommunityDialog(context, row),
-														);
-													},
-												),
+												child: _buildCommunityList(),
 											),
 										],
 									),
@@ -114,6 +183,68 @@ class CommunityScreen extends StatelessWidget {
 					),
 				),
 			),
+		);
+	}
+
+	Widget _buildCommunityList() {
+		if (_isLoading) {
+			return const Center(
+				child: CircularProgressIndicator(
+					valueColor: AlwaysStoppedAnimation<Color>(AppColors.pinkTop),
+				),
+			);
+		}
+
+		if (_errorMessage != null) {
+			return Center(
+				child: Column(
+					mainAxisAlignment: MainAxisAlignment.center,
+					children: [
+						const Icon(Icons.error_outline, color: AppColors.pinkTop, size: 48),
+						const SizedBox(height: 16),
+						Text(
+							_errorMessage!,
+							textAlign: TextAlign.center,
+							style: const TextStyle(color: AppColors.textDark, fontSize: 14),
+						),
+						const SizedBox(height: 16),
+						ElevatedButton(
+							onPressed: _fetchCommunities,
+							style: ElevatedButton.styleFrom(
+								backgroundColor: AppColors.pinkTop,
+							),
+							child: const Text('Retry', style: TextStyle(color: Colors.white)),
+						),
+					],
+				),
+			);
+		}
+
+		if (_filteredCommunities.isEmpty) {
+			return Center(
+				child: Text(
+					_searchController.text.isEmpty
+						? 'No communities available'
+						: 'No communities found',
+					style: const TextStyle(
+						color: AppColors.textDark,
+						fontSize: 16,
+						fontWeight: FontWeight.w600,
+					),
+				),
+			);
+		}
+
+		return ListView.separated(
+			itemCount: _filteredCommunities.length,
+			separatorBuilder: (_, __) => const SizedBox(height: 10),
+			itemBuilder: (context, index) {
+				final row = _filteredCommunities[index];
+				return _CommunityListTile(
+					data: row,
+					onTap: () => _showJoinCommunityDialog(context, row),
+				);
+			},
 		);
 	}
 
@@ -152,12 +283,25 @@ class CommunityScreen extends StatelessWidget {
 									),
 									const SizedBox(height: 10),
 									ClipOval(
-										child: Image.network(
-											row.imageUrl,
-											width: 130,
-											height: 130,
-											fit: BoxFit.cover,
-										),
+										child: row.isAsset
+											? Image.asset(
+												row.imageUrl,
+												width: 130,
+												height: 130,
+												fit: BoxFit.cover,
+											)
+											: Image.network(
+												row.imageUrl,
+												width: 130,
+												height: 130,
+												fit: BoxFit.cover,
+												errorBuilder: (_, __, ___) => Image.asset(
+													'assets/FallBackProfile.png',
+													width: 130,
+													height: 130,
+													fit: BoxFit.cover,
+												),
+											),
 									),
 									const SizedBox(height: 10),
 									Text(
@@ -190,7 +334,9 @@ class CommunityScreen extends StatelessWidget {
 											_DecisionButton(
 												backgroundColor: const Color(0xFF2CC2AA),
 												icon: Icons.check_rounded,
-												onTap: () => Navigator.of(dialogContext).pop(),
+												onTap: () {
+													_handleJoinCommunity(row, dialogContext);
+												},
 											),
 										],
 									),
@@ -201,6 +347,40 @@ class CommunityScreen extends StatelessWidget {
 				);
 			},
 		);
+	}
+
+	Future<void> _handleJoinCommunity(_CommunityRowData row, BuildContext dialogContext) async {
+		final userId = AuthSession.instance.userId;
+		if (userId == null) {
+			if (mounted) {
+				Navigator.of(dialogContext).pop();
+				ScaffoldMessenger.of(context).showSnackBar(
+					const SnackBar(content: Text('Please log in to join communities.')),
+				);
+			}
+			return;
+		}
+
+		try {
+			await ChatService.addUserToCommunity(userId: userId, communityId: row.id);
+			if (!mounted) return;
+
+			Navigator.of(dialogContext).pop();
+			ScaffoldMessenger.of(context).showSnackBar(
+				SnackBar(content: Text('You joined ${row.title}!')),
+			);
+			await _fetchCommunities();
+		} catch (e) {
+			if (!mounted) return;
+
+			Navigator.of(dialogContext).pop();
+			ScaffoldMessenger.of(context).showSnackBar(
+				const SnackBar(
+					content: Text('Failed to join community. Please try again.'),
+					backgroundColor: Colors.red,
+				),
+			);
+		}
 	}
 }
 
@@ -228,12 +408,25 @@ class _CommunityListTile extends StatelessWidget {
 						children: [
 							ClipRRect(
 								borderRadius: BorderRadius.circular(6),
-								child: Image.network(
-									data.imageUrl,
-									width: 50,
-									height: 50,
-									fit: BoxFit.cover,
-								),
+								child: data.isAsset
+									? Image.asset(
+										data.imageUrl,
+										width: 50,
+										height: 50,
+										fit: BoxFit.cover,
+									)
+									: Image.network(
+										data.imageUrl,
+										width: 50,
+										height: 50,
+										fit: BoxFit.cover,
+										errorBuilder: (_, __, ___) => Image.asset(
+											'assets/FallBackProfile.png',
+											width: 50,
+											height: 50,
+											fit: BoxFit.cover,
+										),
+									),
 							),
 							const SizedBox(width: 10),
 							Expanded(
@@ -274,16 +467,20 @@ class _CommunityListTile extends StatelessWidget {
 
 class _CommunityRowData {
 	const _CommunityRowData({
+		required this.id,
 		required this.title,
 		required this.description,
 		required this.participants,
 		required this.imageUrl,
+		this.isAsset = false,
 	});
 
+	final int id;
 	final String title;
 	final String description;
 	final String participants;
 	final String imageUrl;
+	final bool isAsset;
 
 	String get subtitle => '$description  •  $participants';
 }

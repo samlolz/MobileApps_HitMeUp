@@ -253,6 +253,8 @@ class communityMessagePollSerializer(serializers.ModelSerializer):
 
 
 class communityMessageSerializer(serializers.ModelSerializer):
+	senderName = serializers.CharField(source="sender.name", read_only=True)
+	senderProfile = serializers.ImageField(source="sender.profilepicture", read_only=True)
 	pollQuestion = serializers.CharField(write_only=True, required=False, allow_blank=False)
 	pollOptions = serializers.ListField(
 		child=serializers.CharField(allow_blank=False),
@@ -316,6 +318,8 @@ class communityMessageSerializer(serializers.ModelSerializer):
 			"id",
 			"community",
 			"sender",
+			"senderName",
+			"senderProfile",
 			"text",
 			"image",
 			"video",
