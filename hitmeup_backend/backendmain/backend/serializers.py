@@ -33,6 +33,7 @@ class userSerializer(serializers.ModelSerializer):
 			"friends",
 			"communities",
 			"diamonds",
+			"level",
 			"profilepicture",
 		]
 
@@ -70,6 +71,24 @@ class communitySerializer(serializers.ModelSerializer):
 
 
 class directChatSerializer(serializers.ModelSerializer):
+	lastMessage = serializers.SerializerMethodField(read_only=True)
+
+	def get_lastMessage(self, obj):
+		latest_message = obj.messages.order_by("-created_at").first()
+		if latest_message is None:
+			return ""
+		if latest_message.text:
+			return latest_message.text
+		if latest_message.image:
+			return "Image"
+		if latest_message.video:
+			return "Video"
+		if latest_message.voiceRecording:
+			return "Voice message"
+		if latest_message.hasPoll:
+			return "Poll"
+		return ""
+
 	def validate(self, attrs):
 		user1_id = attrs.get("user1", self.instance.user1 if self.instance else None)
 		user2_id = attrs.get("user2", self.instance.user2 if self.instance else None)
@@ -97,7 +116,7 @@ class directChatSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = directchat
-		fields = ["id", "user1", "user2", "created_at", "updated_at"]
+		fields = ["id", "user1", "user2", "created_at", "updated_at", "lastMessage"]
 
 
 class directMessageSerializer(serializers.ModelSerializer):
@@ -339,10 +358,38 @@ class friendRequestSerializer(serializers.ModelSerializer):
 		return attrs
 
 	def update(self, instance, validated_data):
+		new_status = validated_data.get("status", instance.status)
 		instance = super().update(instance, validated_data)
-		if instance.status == friendrequest.STATUS_ACCEPTED:
+		if new_status == friendrequest.STATUS_ACCEPTED:
 			instance.requester.friends.add(instance.receiver)
+			directchat.ensure_between_users(instance.requester, instance.receiver)
+			# Keep level in sync even if signal handlers are bypassed or stale.
+			instance.requester.sync_level_from_friends()
+			instance.receiver.sync_level_from_friends()
+
+		# Resolved friend requests are deleted to keep table size small.
+		if new_status in {friendrequest.STATUS_ACCEPTED, friendrequest.STATUS_REJECTED}:
+			instance.delete()
+
 		return instance
+
+	def create(self, validated_data):
+		requester_obj = validated_data.get("requester")
+		receiver_obj = validated_data.get("receiver")
+		new_status = validated_data.get("status", friendrequest.STATUS_PENDING)
+
+		if (
+			requester_obj is not None
+			and receiver_obj is not None
+			and new_status == friendrequest.STATUS_PENDING
+		):
+			# Re-sending to the same user overrides the previous same-direction request.
+			friendrequest.objects.filter(
+				requester=requester_obj,
+				receiver=receiver_obj,
+			).delete()
+
+		return super().create(validated_data)
 
 	class Meta:
 		model = friendrequest

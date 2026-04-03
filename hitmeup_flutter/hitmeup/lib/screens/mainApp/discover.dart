@@ -1,10 +1,14 @@
 import 'dart:math' as math;
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import 'chat.dart';
 import 'friends.dart';
 import 'profile.dart';
 import 'requests.dart';
+import '../../services/api_config.dart';
+import '../../services/auth_session.dart';
 import '../../theme/app_theme.dart';
 
 class SwipeCardScreen extends StatefulWidget {
@@ -15,52 +19,198 @@ class SwipeCardScreen extends StatefulWidget {
 }
 
 class _SwipeCardScreenState extends State<SwipeCardScreen> {
+  static const int _discoverBatchSize = 5;
   static const double _swipeThreshold = 140;
   static const Duration _animationDuration = Duration(milliseconds: 260);
   static const double _maxDragDistance = 220;
   static const double _maxLift = 42;
   static const double _maxRotation = 0.14;
-  static const int _diamondBalance = 17;
+  int _diamondBalance = 17;
 
-  final List<ProfileCardData> _profiles = const [
-    ProfileCardData(
-      name: 'Frezz',
-      age: 25,
-      level: 3,
-      location: 'Bintaro, Tangerang Selatan',
-      score: 3,
-      imageUrl: 'https://i.pravatar.cc/900?img=12',
-    ),
-    ProfileCardData(
-      name: 'Alea',
-      age: 23,
-      level: 5,
-      location: 'Kemang, Jakarta Selatan',
-      score: 8,
-      imageUrl: 'https://i.pravatar.cc/900?img=32',
-    ),
-    ProfileCardData(
-      name: 'Rafi',
-      age: 27,
-      level: 4,
-      location: 'Cilandak, Jakarta Selatan',
-      score: 6,
-      imageUrl: 'https://i.pravatar.cc/900?img=15',
-    ),
-    ProfileCardData(
-      name: 'Naya',
-      age: 24,
-      level: 2,
-      location: 'BSD, Tangerang',
-      score: 4,
-      imageUrl: 'https://i.pravatar.cc/900?img=47',
-    ),
-  ];
+  final List<ProfileCardData> _allProfiles = [];
+  final List<ProfileCardData> _profiles = [];
 
   Offset _dragOffset = Offset.zero;
-  int _currentIndex = 0;
+  int _nextProfileCursor = 0;
   int _selectedBottomNavIndex = 0;
   bool _isAnimating = false;
+  bool _isLoadingProfiles = true;
+  String? _profilesError;
+  final Set<int> _requestedUserIds = <int>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfilesFromApi();
+  }
+
+  Future<void> _loadProfilesFromApi() async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/users/');
+    final currentUserId = AuthSession.instance.userId;
+
+    try {
+      final response = await http.get(uri).timeout(const Duration(seconds: 12));
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _isLoadingProfiles = false;
+          _profilesError = 'Failed to load users (${response.statusCode}).';
+        });
+        return;
+      }
+
+      final decoded = jsonDecode(response.body);
+      List<dynamic> usersJson;
+      if (decoded is List) {
+        usersJson = decoded;
+      } else if (decoded is Map<String, dynamic> &&
+          decoded['results'] is List) {
+        usersJson = decoded['results'] as List<dynamic>;
+      } else {
+        usersJson = const [];
+      }
+
+      final users = usersJson.whereType<Map<String, dynamic>>().toList();
+      Map<String, dynamic>? currentUser;
+      for (final candidate in users) {
+        if (candidate['id'] == currentUserId) {
+          currentUser = candidate;
+          break;
+        }
+      }
+      final currentDiamondsRaw = currentUser?['diamonds'];
+      final currentDiamonds = currentDiamondsRaw is int
+          ? currentDiamondsRaw
+          : int.tryParse(currentDiamondsRaw?.toString() ?? '');
+
+      final mappedProfiles = users
+          .where((u) => u['id'] != currentUserId)
+          .map(_mapUserToProfileCard)
+          .toList();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _allProfiles
+          ..clear()
+          ..addAll(mappedProfiles);
+        _profiles
+          ..clear()
+          ..addAll(_allProfiles.take(_discoverBatchSize));
+        _nextProfileCursor = _profiles.length;
+        _dragOffset = Offset.zero;
+        _isAnimating = false;
+        _isLoadingProfiles = false;
+        _profilesError = null;
+        if (currentDiamonds != null) {
+          _diamondBalance = currentDiamonds;
+        }
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isLoadingProfiles = false;
+        _profilesError =
+            'Unable to connect to backend at ${ApiConfig.baseUrl}.';
+      });
+    }
+  }
+
+  ProfileCardData _mapUserToProfileCard(Map<String, dynamic> userData) {
+    final idRaw = userData['id'];
+    final userId =
+        idRaw is int ? idRaw : int.tryParse(idRaw?.toString() ?? '') ?? -1;
+    final birthdayRaw = (userData['birthday'] as String?)?.trim();
+    final age = _calculateAgeFromBirthday(birthdayRaw);
+
+    final levelRaw = userData['level'];
+    final level = levelRaw is int
+        ? levelRaw
+        : int.tryParse(levelRaw?.toString() ?? '') ?? 1;
+
+    final diamondsRaw = userData['diamonds'];
+    final diamonds = diamondsRaw is int
+        ? diamondsRaw
+        : int.tryParse(diamondsRaw?.toString() ?? '') ?? 0;
+
+    return ProfileCardData(
+      userId: userId,
+      name: (userData['name'] as String?)?.trim().isNotEmpty == true
+          ? (userData['name'] as String).trim()
+          : 'Unknown User',
+      age: age,
+      level: level < 1 ? 1 : level,
+      location: (userData['location'] as String?)?.trim().isNotEmpty == true
+          ? (userData['location'] as String).trim()
+          : 'Unknown Location',
+      diamonds: diamonds,
+      imageUrl: _resolveProfilePictureUrl(
+        (userData['profilepicture'] as String?)?.trim(),
+      ),
+    );
+  }
+
+  int _calculateAgeFromBirthday(String? birthdayRaw) {
+    if (birthdayRaw == null || birthdayRaw.isEmpty) {
+      return 0;
+    }
+
+    final birthday = DateTime.tryParse(birthdayRaw);
+    if (birthday == null) {
+      return 0;
+    }
+
+    final now = DateTime.now();
+    var age = now.year - birthday.year;
+    final hasHadBirthdayThisYear = now.month > birthday.month ||
+        (now.month == birthday.month && now.day >= birthday.day);
+    if (!hasHadBirthdayThisYear) {
+      age -= 1;
+    }
+    return age < 0 ? 0 : age;
+  }
+
+  String? _resolveProfilePictureUrl(String? rawUrl) {
+    if (rawUrl == null || rawUrl.isEmpty) {
+      return null;
+    }
+
+    final normalizedRaw = rawUrl.replaceAll('\\', '/').trim();
+    if (normalizedRaw.isEmpty) {
+      return null;
+    }
+
+    final parsed = Uri.tryParse(normalizedRaw);
+    final apiBase = Uri.parse(ApiConfig.baseUrl);
+
+    if (parsed != null && parsed.hasScheme) {
+      final isLocalHost =
+          parsed.host == '127.0.0.1' || parsed.host == 'localhost';
+      if (isLocalHost && apiBase.host != parsed.host) {
+        return apiBase
+            .replace(
+              path: parsed.path,
+              query: parsed.query,
+              fragment: parsed.fragment,
+            )
+            .toString();
+      }
+      return normalizedRaw;
+    }
+
+    final base = Uri.parse('${ApiConfig.baseUrl}/');
+    final withMediaPrefix =
+        normalizedRaw.startsWith('/') ? normalizedRaw : '/media/$normalizedRaw';
+    return base.resolve(withMediaPrefix).toString();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,9 +246,9 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
                     fit: BoxFit.contain,
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     '$_diamondBalance',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Color(0xFF4F8FF7),
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -125,22 +275,53 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
               children: [
                 const SizedBox(height: 8),
                 Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      return Stack(
-                        clipBehavior: Clip.none,
-                        alignment: Alignment.bottomCenter,
-                        children: [
-                          for (
-                            int depth = math.min(2, _profiles.length - 1);
-                            depth >= 0;
-                            depth--
-                          )
-                            _buildLayeredCard(constraints, depth),
-                        ],
-                      );
-                    },
-                  ),
+                  child: _isLoadingProfiles
+                      ? const Center(
+                          child: SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: CircularProgressIndicator(strokeWidth: 2.4),
+                          ),
+                        )
+                      : (_profilesError != null
+                          ? Center(
+                              child: Text(
+                                _profilesError!,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Color(0xFF8B0000),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            )
+                          : (_profiles.isEmpty
+                              ? const Center(
+                                  child: Text(
+                                    'No discover profiles available yet.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                )
+                              : LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    return Stack(
+                                      clipBehavior: Clip.none,
+                                      alignment: Alignment.bottomCenter,
+                                      children: [
+                                        for (int depth = math.min(
+                                                2, _profiles.length - 1);
+                                            depth >= 0;
+                                            depth--)
+                                          _buildLayeredCard(constraints, depth),
+                                      ],
+                                    );
+                                  },
+                                ))),
                 ),
                 const SizedBox(height: 16),
                 Transform.translate(
@@ -160,7 +341,7 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
   }
 
   Widget _buildLayeredCard(BoxConstraints constraints, int depth) {
-    final profile = _profiles[(_currentIndex + depth) % _profiles.length];
+    final profile = _profiles[depth];
     final isTopCard = depth == 0;
     final rawHorizontalDrag = _dragOffset.dx;
     final constrainedHorizontalDrag = rawHorizontalDrag.clamp(
@@ -217,8 +398,13 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
   }
 
   Future<void> _swipeCard(double direction) async {
-    if (_isAnimating) {
+    if (_isAnimating || _profiles.isEmpty) {
       return;
+    }
+
+    final swipedProfile = _profiles.first;
+    if (direction > 0) {
+      _sendFriendRequest(swipedProfile);
     }
 
     final screenWidth = MediaQuery.of(context).size.width;
@@ -235,10 +421,71 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
     }
 
     setState(() {
-      _currentIndex = (_currentIndex + 1) % _profiles.length;
+      if (_profiles.isNotEmpty) {
+        _profiles.removeAt(0);
+      }
+
+      if (_allProfiles.isNotEmpty) {
+        if (_nextProfileCursor >= _allProfiles.length) {
+          _nextProfileCursor = 0;
+        }
+
+        _profiles.add(_allProfiles[_nextProfileCursor]);
+        _nextProfileCursor += 1;
+      }
+
       _dragOffset = Offset.zero;
       _isAnimating = false;
     });
+  }
+
+  Future<void> _sendFriendRequest(ProfileCardData profile) async {
+    if (profile.userId <= 0 || _requestedUserIds.contains(profile.userId)) {
+      return;
+    }
+
+    final requesterId = AuthSession.instance.userId;
+    if (requesterId == null || requesterId == profile.userId) {
+      return;
+    }
+
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/friend-requests/');
+    final payload = {
+      'requester': requesterId,
+      'receiver': profile.userId,
+      'status': 'pending',
+    };
+
+    try {
+      final response = await http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 201) {
+        _requestedUserIds.add(profile.userId);
+        if (!mounted) {
+          return;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Friend request sent to ${profile.name}.')),
+        );
+        return;
+      }
+
+      final bodyText = response.body.toLowerCase();
+      final isAlreadyPending = bodyText.contains('already exists') ||
+          bodyText.contains('already friends') ||
+          bodyText.contains('pending friend request');
+      if (isAlreadyPending) {
+        _requestedUserIds.add(profile.userId);
+      }
+    } catch (_) {
+      // Keep swipe fluid even when request send fails.
+    }
   }
 
   void _handleBottomNavTap(int index) {
@@ -287,7 +534,20 @@ class _ProfileCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.network(profile.imageUrl, fit: BoxFit.cover),
+              const ColoredBox(color: Color.fromARGB(255, 255, 255, 255)),
+              if (profile.imageUrl == null || profile.imageUrl!.isEmpty)
+                Image.asset('assets/FallBackProfile.png', fit: BoxFit.cover)
+              else
+                Image.network(
+                  profile.imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) {
+                    return Image.asset(
+                      'assets/FallBackProfile.png',
+                      fit: BoxFit.cover,
+                    );
+                  },
+                ),
               DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -334,7 +594,7 @@ class _ProfileCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 2),
                       Text(
-                        '${profile.score}',
+                        '${profile.diamonds}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -570,18 +830,20 @@ class _BarIconButton extends StatelessWidget {
 
 class ProfileCardData {
   const ProfileCardData({
+    required this.userId,
     required this.name,
     required this.age,
     required this.level,
     required this.location,
-    required this.score,
+    required this.diamonds,
     required this.imageUrl,
   });
 
+  final int userId;
   final String name;
   final int age;
   final int level;
   final String location;
-  final int score;
-  final String imageUrl;
+  final int diamonds;
+  final String? imageUrl;
 }

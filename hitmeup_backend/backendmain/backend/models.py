@@ -1,5 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 
 # Create your models here.
 
@@ -24,7 +26,13 @@ class user(models.Model):
 	friends = models.ManyToManyField("self", blank=True, symmetrical=True)
 	communities = models.ManyToManyField("community", blank=True, related_name="members")
 	diamonds = models.PositiveIntegerField(default=20)
+	level = models.PositiveIntegerField(default=1)
 	profilepicture = models.ImageField(upload_to="profile_pictures/", blank=True, null=True)
+
+	def sync_level_from_friends(self):
+		# Level is derived from friend count, with 1 as the minimum baseline.
+		self.level = max(1, self.friends.count())
+		self.save(update_fields=["level"])
 
 	def __str__(self):
 		return self.name
@@ -42,7 +50,7 @@ class community(models.Model):
 	class Meta:
 		constraints = [
 			models.CheckConstraint(
-				check=models.Q(totalParticipants__lte=models.F("maxParticipants")),
+				condition=models.Q(totalParticipants__lte=models.F("maxParticipants")),
 				name="community_total_lte_max",
 			),
 		]
@@ -58,9 +66,23 @@ class directchat(models.Model):
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
+	@classmethod
+	def ensure_between_users(cls, user_a, user_b):
+		if user_a.id == user_b.id:
+			raise ValidationError("A user cannot create a direct chat with themselves.")
+
+		first_user, second_user = sorted((user_a, user_b), key=lambda current_user: current_user.id)
+		chat, _ = cls.objects.get_or_create(user1=first_user, user2=second_user)
+		return chat
+
+	@classmethod
+	def ensure_for_user_friends(cls, current_user):
+		for friend in current_user.friends.all():
+			cls.ensure_between_users(current_user, friend)
+
 	class Meta:
 		constraints = [
-			models.CheckConstraint(check=~models.Q(user1=models.F("user2")), name="directchat_distinct_users"),
+			models.CheckConstraint(condition=~models.Q(user1=models.F("user2")), name="directchat_distinct_users"),
 			models.UniqueConstraint(fields=["user1", "user2"], name="unique_directchat_pair"),
 		]
 
@@ -141,7 +163,7 @@ class friendrequest(models.Model):
 
 	class Meta:
 		constraints = [
-			models.CheckConstraint(check=~models.Q(requester=models.F("receiver")), name="friendrequest_distinct_users"),
+			models.CheckConstraint(condition=~models.Q(requester=models.F("receiver")), name="friendrequest_distinct_users"),
 			models.UniqueConstraint(fields=["requester", "receiver"], name="unique_friendrequest_direction"),
 		]
 
@@ -341,3 +363,27 @@ class communitymessagepollvote(models.Model):
 
 	def __str__(self):
 		return f"Community vote by {self.voter_id} on option {self.option_id}"
+
+
+@receiver(m2m_changed, sender=user.friends.through)
+def sync_user_level_on_friends_change(sender, instance, action, reverse, pk_set, **kwargs):
+	if action == "pre_clear":
+		instance._friends_before_clear = list(instance.friends.values_list("id", flat=True))
+		return
+
+	if action not in {"post_add", "post_remove", "post_clear"}:
+		return
+
+	instance.sync_level_from_friends()
+
+	if action == "post_clear":
+		cleared_ids = getattr(instance, "_friends_before_clear", [])
+		for related_user in user.objects.filter(pk__in=cleared_ids):
+			related_user.sync_level_from_friends()
+		if hasattr(instance, "_friends_before_clear"):
+			delattr(instance, "_friends_before_clear")
+		return
+
+	if pk_set:
+		for related_user in user.objects.filter(pk__in=pk_set):
+			related_user.sync_level_from_friends()

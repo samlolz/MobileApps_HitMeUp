@@ -1,10 +1,15 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+import '../../services/api_config.dart';
+import '../../services/auth_session.dart';
+import '../../theme/app_theme.dart';
 import 'chat.dart';
 import 'discover.dart';
 import 'profile.dart';
 import 'requests.dart';
-import '../../theme/app_theme.dart';
 
 class FriendsScreen extends StatefulWidget {
   const FriendsScreen({super.key});
@@ -14,27 +19,172 @@ class FriendsScreen extends StatefulWidget {
 }
 
 class _FriendsScreenState extends State<FriendsScreen> {
-  static const int _diamondBalance = 17;
+  int _diamondBalance = 17;
   int _selectedBottomNavIndex = 3;
+  bool _isLoadingFriends = true;
+  String? _friendsError;
+  List<_FriendData> _friends = const [];
 
-  final List<_FriendData> _friends = const [
-    _FriendData(
-      name: 'Siti Ratmawati',
-      birthday: '15 December 2006',
-      gender: 'Woman',
-      location: 'Gading Serpong',
-      interests: 'Cooking, Roblox, and Watch horror films',
-      avatarUrl: 'https://i.pravatar.cc/160?img=44',
-    ),
-    _FriendData(
-      name: 'Budi Amman',
-      birthday: '6 March 2003',
-      gender: 'Man',
-      location: 'Bintaro',
-      interests: 'Actor, Plays free fire, and Plays Padel',
-      avatarUrl: 'https://i.pravatar.cc/160?img=13',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _hydrateDiamondsFromSession();
+    _loadFriendsFromApi();
+  }
+
+  void _hydrateDiamondsFromSession() {
+    final cachedUser = AuthSession.instance.currentUser;
+    final diamondsRaw = cachedUser?['diamonds'];
+    final diamonds = diamondsRaw is int
+        ? diamondsRaw
+        : int.tryParse(diamondsRaw?.toString() ?? '');
+    if (diamonds != null) {
+      _diamondBalance = diamonds;
+    }
+  }
+
+  Future<void> _loadFriendsFromApi() async {
+    final userId = AuthSession.instance.userId;
+    if (userId == null) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isLoadingFriends = false;
+        _friendsError = 'No logged-in user found.';
+      });
+      return;
+    }
+
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/users/$userId/');
+
+    try {
+      final response = await http.get(uri).timeout(const Duration(seconds: 12));
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _isLoadingFriends = false;
+          _friendsError = 'Failed to load friends (${response.statusCode}).';
+        });
+        return;
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _isLoadingFriends = false;
+          _friendsError = 'Invalid friends response from server.';
+        });
+        return;
+      }
+
+      final diamondsRaw = decoded['diamonds'];
+      final diamonds = diamondsRaw is int
+          ? diamondsRaw
+          : int.tryParse(diamondsRaw?.toString() ?? '');
+      final friendIds = _extractFriendIds(decoded['friends']);
+      final friends = await _loadFriendDetails(friendIds);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        if (diamonds != null) {
+          _diamondBalance = diamonds;
+        }
+        _friends = friends;
+        _isLoadingFriends = false;
+        _friendsError = null;
+      });
+
+      await AuthSession.instance.saveUser(decoded);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isLoadingFriends = false;
+        _friendsError = 'Unable to connect to backend at ${ApiConfig.baseUrl}.';
+      });
+    }
+  }
+
+  List<int> _extractFriendIds(dynamic rawFriends) {
+    if (rawFriends is! List) {
+      return const [];
+    }
+
+    final friendIds = <int>[];
+    for (final friend in rawFriends) {
+      if (friend is int) {
+        friendIds.add(friend);
+        continue;
+      }
+
+      if (friend is String) {
+        final parsed = int.tryParse(friend);
+        if (parsed != null) {
+          friendIds.add(parsed);
+        }
+        continue;
+      }
+
+      if (friend is Map<String, dynamic>) {
+        final rawId = friend['id'];
+        if (rawId is int) {
+          friendIds.add(rawId);
+        } else {
+          final parsed = int.tryParse(rawId?.toString() ?? '');
+          if (parsed != null) {
+            friendIds.add(parsed);
+          }
+        }
+      }
+    }
+
+    return friendIds.toSet().toList();
+  }
+
+  Future<List<_FriendData>> _loadFriendDetails(List<int> friendIds) async {
+    if (friendIds.isEmpty) {
+      return const [];
+    }
+
+    final results = await Future.wait(
+      friendIds.map((friendId) async {
+        try {
+          final response = await http
+              .get(Uri.parse('${ApiConfig.baseUrl}/api/users/$friendId/'))
+              .timeout(const Duration(seconds: 12));
+
+          if (response.statusCode < 200 || response.statusCode >= 300) {
+            return null;
+          }
+
+          final decoded = jsonDecode(response.body);
+          if (decoded is! Map<String, dynamic>) {
+            return null;
+          }
+
+          return _FriendData.fromApi(decoded);
+        } catch (_) {
+          return null;
+        }
+      }),
+    );
+
+    final friends = results.whereType<_FriendData>().toList();
+    friends.sort(
+      (left, right) => left.name.toLowerCase().compareTo(right.name.toLowerCase()),
+    );
+    return friends;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +217,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 children: [
                   Image.asset(
                     'assets/diamond.png',
-                    width: 20, height: 20,
+                    width: 20,
+                    height: 20,
                     fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) => const Icon(
                       Icons.diamond_rounded,
@@ -76,9 +227,9 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     '$_diamondBalance',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Color(0xFF4F8FF7),
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -98,16 +249,58 @@ class _FriendsScreenState extends State<FriendsScreen> {
         decoration: const BoxDecoration(gradient: AppGradient.background),
         child: SafeArea(
           top: false,
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
-            itemCount: _friends.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              return _FriendTile(data: _friends[index]);
-            },
-          ),
+          child: _buildFriendsBody(),
         ),
       ),
+    );
+  }
+
+  Widget _buildFriendsBody() {
+    if (_isLoadingFriends) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_friendsError != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            _friendsError!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_friends.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            'You do not have any friends yet.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
+      itemCount: _friends.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        return _FriendTile(data: _friends[index]);
+      },
     );
   }
 
@@ -169,12 +362,17 @@ class _FriendTile extends StatelessWidget {
               height: 96,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Container(
-                width: 96, height: 96,
+                width: 96,
+                height: 96,
                 decoration: BoxDecoration(
                   color: Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.person_rounded, size: 48, color: Colors.grey),
+                child: const Icon(
+                  Icons.person_rounded,
+                  size: 48,
+                  color: Colors.grey,
+                ),
               ),
             ),
           ),
@@ -253,12 +451,125 @@ class _FriendData {
     required this.avatarUrl,
   });
 
+  factory _FriendData.fromApi(Map<String, dynamic> userData) {
+    final name = (userData['name'] as String?)?.trim();
+    final birthday = _formatBirthdayValue(userData['birthday'] as String?);
+    final gender = _formatGenderValue(userData['gender'] as String?);
+    final location = (userData['location'] as String?)?.trim();
+    final interests = _formatInterests(userData);
+    final profilePicture = _resolveProfilePictureUrl(
+      (userData['profilepicture'] as String?)?.trim(),
+    );
+
+    return _FriendData(
+      name: (name != null && name.isNotEmpty) ? name : 'Unknown friend',
+      birthday: birthday,
+      gender: gender,
+      location: (location != null && location.isNotEmpty)
+          ? location
+          : 'No location set',
+      interests: interests,
+      avatarUrl: profilePicture ?? '',
+    );
+  }
+
   final String name;
   final String birthday;
   final String gender;
   final String location;
   final String interests;
   final String avatarUrl;
+}
+
+String _formatBirthdayValue(String? value) {
+  if (value == null || value.isEmpty) {
+    return 'Birthday not set';
+  }
+
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) {
+    return value;
+  }
+
+  const monthNames = <String>[
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
+  return '${parsed.day} ${monthNames[parsed.month - 1]} ${parsed.year}';
+}
+
+String _formatGenderValue(String? value) {
+  if (value == null || value.isEmpty) {
+    return 'Gender not set';
+  }
+
+  switch (value.toLowerCase()) {
+    case 'male':
+      return 'Male';
+    case 'female':
+      return 'Female';
+    default:
+      return value;
+  }
+}
+
+String _formatInterests(Map<String, dynamic> userData) {
+  final interests = [
+    (userData['intrest1'] as String?)?.trim(),
+    (userData['intrest2'] as String?)?.trim(),
+    (userData['intrest3'] as String?)?.trim(),
+    (userData['intrest4'] as String?)?.trim(),
+  ].whereType<String>().where((value) => value.isNotEmpty).toList();
+
+  if (interests.isEmpty) {
+    return 'No interests added';
+  }
+
+  return interests.join(', ');
+}
+
+String? _resolveProfilePictureUrl(String? rawUrl) {
+  if (rawUrl == null || rawUrl.isEmpty) {
+    return null;
+  }
+
+  final normalizedRaw = rawUrl.replaceAll('\\', '/').trim();
+  if (normalizedRaw.isEmpty) {
+    return null;
+  }
+
+  final parsed = Uri.tryParse(normalizedRaw);
+  final apiBase = Uri.parse(ApiConfig.baseUrl);
+
+  if (parsed != null && parsed.hasScheme) {
+    final isLocalHost = parsed.host == '127.0.0.1' || parsed.host == 'localhost';
+    if (isLocalHost && apiBase.host != parsed.host) {
+      return apiBase
+          .replace(
+            path: parsed.path,
+            query: parsed.query,
+            fragment: parsed.fragment,
+          )
+          .toString();
+    }
+    return normalizedRaw;
+  }
+
+  final base = Uri.parse('${ApiConfig.baseUrl}/');
+  final withMediaPrefix =
+      normalizedRaw.startsWith('/') ? normalizedRaw : '/media/$normalizedRaw';
+  return base.resolve(withMediaPrefix).toString();
 }
 
 class _BottomNavBar extends StatelessWidget {
@@ -344,13 +655,16 @@ class _BottomNavItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: SizedBox(
-          width: 56, height: 56,
+          width: 56,
+          height: 56,
           child: Center(
             child: SizedBox(
-              width: 40, height: 40,
+              width: 40,
+              height: 40,
               child: Image.asset(
                 imageAssetPath,
-                width: 32, height: 32,
+                width: 32,
+                height: 32,
                 fit: BoxFit.fill,
                 errorBuilder: (context, error, stackTrace) {
                   return Icon(fallbackIcon, color: Colors.black, size: 24);

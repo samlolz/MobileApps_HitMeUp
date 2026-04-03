@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="community",
             constraint=models.CheckConstraint(
-                check=models.Q(totalParticipants__lte=models.F("maxParticipants")),
+                condition=models.Q(totalParticipants__lte=models.F("maxParticipants")),
                 name="community_total_lte_max",
             ),
         ),

@@ -22,7 +22,7 @@ class Step3BirthdayScreen extends StatefulWidget {
 
 class _Step3BirthdayScreenState extends State<Step3BirthdayScreen> {
   bool _showOnProfile = false;
-  DateTime _selectedDate = DateTime(2002, 5, 8);
+  DateTime _selectedDate = DateTime(DateTime.now().year - 18, DateTime.now().month, DateTime.now().day);
 
   @override
   Widget build(BuildContext context) {

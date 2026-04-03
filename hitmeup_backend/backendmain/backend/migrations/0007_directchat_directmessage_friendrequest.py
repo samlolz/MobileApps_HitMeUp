@@ -96,7 +96,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name="directchat",
-            constraint=models.CheckConstraint(check=models.Q(("user1", models.F("user2")), _negated=True), name="directchat_distinct_users"),
+            constraint=models.CheckConstraint(condition=models.Q(("user1", models.F("user2")), _negated=True), name="directchat_distinct_users"),
         ),
         migrations.AddConstraint(
             model_name="directchat",
@@ -104,7 +104,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name="friendrequest",
-            constraint=models.CheckConstraint(check=models.Q(("requester", models.F("receiver")), _negated=True), name="friendrequest_distinct_users"),
+            constraint=models.CheckConstraint(condition=models.Q(("requester", models.F("receiver")), _negated=True), name="friendrequest_distinct_users"),
         ),
         migrations.AddConstraint(
             model_name="friendrequest",

@@ -96,13 +96,18 @@ class communityMessageViewSet(viewsets.ModelViewSet):
 
 
 class directChatViewSet(viewsets.ModelViewSet):
-	queryset = directchat.objects.all()
+	queryset = directchat.objects.select_related("user1", "user2").all()
 	serializer_class = directChatSerializer
 
 	def get_queryset(self):
 		queryset = super().get_queryset()
 		user_id = self.request.query_params.get("user")
 		if user_id:
+			current_user = user.objects.prefetch_related("friends").filter(id=user_id).first()
+			if current_user is None:
+				return queryset.none()
+
+			directchat.ensure_for_user_friends(current_user)
 			queryset = queryset.filter(user1_id=user_id) | queryset.filter(user2_id=user_id)
 		return queryset.order_by("-updated_at")
 
@@ -116,6 +121,25 @@ class directMessageViewSet(viewsets.ModelViewSet):
 		chat_id = self.request.query_params.get("chat")
 		if chat_id:
 			queryset = queryset.filter(chat_id=chat_id)
+
+		before_id = self.request.query_params.get("before_id")
+		limit_value = self.request.query_params.get("limit")
+
+		if before_id:
+			queryset = queryset.filter(id__lt=before_id)
+
+		if chat_id and limit_value:
+			try:
+				limit_count = max(1, int(limit_value))
+			except ValueError:
+				limit_count = 20
+
+			queryset = queryset.order_by("-created_at")[:limit_count]
+			return list(queryset)[::-1]
+
+		if chat_id and not limit_value:
+			queryset = queryset.order_by("created_at")
+			return queryset
 		return queryset
 
 
