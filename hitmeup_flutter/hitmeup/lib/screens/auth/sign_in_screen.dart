@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../../services/api_config.dart';
 import '../../services/auth_session.dart';
+import '../../services/oauth_service.dart';
 import '../../widgets/common_widgets.dart';
 import '../../theme/app_theme.dart';
 import '../signup/step1_intro_screen.dart';
@@ -23,12 +24,80 @@ class _SignInScreenState extends State<SignInScreen> {
 
   bool _isSubmitting = false;
   String? _submitError;
+  bool _isGoogleLoading = false;
+  final OAuthService _oauthService = OAuthService();
 
   @override
   void dispose() {
     _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    if (_isGoogleLoading) return;
+
+    setState(() {
+      _isGoogleLoading = true;
+      _submitError = null;
+    });
+
+    try {
+      final result = await _oauthService.signInWithGoogle();
+
+      if (!mounted) return;
+
+      if (result == null) {
+        setState(() {
+          _submitError = 'Google sign-in failed or was cancelled.';
+        });
+        return;
+      }
+
+      final status = result['status'] as String?;
+      if (status == 'linked') {
+        final linkedUser = result['user'];
+        if (linkedUser is Map<String, dynamic>) {
+          await AuthSession.instance.saveUser(linkedUser);
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const SwipeCardScreen()),
+          );
+          return;
+        }
+      }
+
+      if (status == 'signup_required') {
+        final prefillEmail = (result['email'] as String?) ?? '';
+        final prefillName = (result['name'] as String?) ?? '';
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => Step1IntroScreen(
+              initialName: prefillName,
+              initialEmail: prefillEmail,
+            ),
+          ),
+        );
+        return;
+      }
+
+      setState(() {
+        _submitError = (result['detail'] as String?) ?? 'Google sign-in failed.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _submitError = 'Google sign-in error: ${e.toString()}';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGoogleLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _submitSignIn() async {
@@ -211,8 +280,6 @@ class _SignInScreenState extends State<SignInScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _googleIcon(),
-                      const SizedBox(width: 20),
-                      _appleIcon(),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -340,22 +407,23 @@ class _SignInScreenState extends State<SignInScreen> {
 
   Widget _googleIcon() {
     return GestureDetector(
-      onTap: () {},
-      child: Image.asset(
-        'assets/google_icon.png',
-        width: 36,
-        height: 36,
-      ),
-    );
-  }
-
-  Widget _appleIcon() {
-    return GestureDetector(
-      onTap: () {},
-      child: const Icon(
-        Icons.apple_rounded,
-        size: 40,
-        color: Colors.black,
+      onTap: _isGoogleLoading ? null : _handleGoogleSignIn,
+      child: Opacity(
+        opacity: _isGoogleLoading ? 0.5 : 1.0,
+        child: _isGoogleLoading
+            ? const SizedBox(
+                width: 36,
+                height: 36,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                ),
+              )
+            : Image.asset(
+                'assets/google_icon.png',
+                width: 36,
+                height: 36,
+              ),
       ),
     );
   }

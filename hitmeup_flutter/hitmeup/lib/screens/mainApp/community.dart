@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../services/chat_service.dart';
 import '../../services/auth_session.dart';
+import 'chat.dart';
+import 'chat_models.dart';
+import 'community_chat_screen.dart';
 
 class CommunityScreen extends StatefulWidget {
 	const CommunityScreen({super.key});
@@ -113,7 +116,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
 				elevation: 0,
         titleSpacing: 8,
 				leading: IconButton(
-					onPressed: () => Navigator.of(context).maybePop(),
+					onPressed: () => Navigator.of(context).pushReplacement(
+						MaterialPageRoute(builder: (_) => const ChatScreen()),
+					),
 					icon: const Icon(Icons.arrow_back_ios_new_rounded),
 					color: AppColors.textDark,
 				),
@@ -366,10 +371,20 @@ class _CommunityScreenState extends State<CommunityScreen> {
 			if (!mounted) return;
 
 			Navigator.of(dialogContext).pop();
-			ScaffoldMessenger.of(context).showSnackBar(
-				SnackBar(content: Text('You joined ${row.title}!')),
-			);
-			await _fetchCommunities();
+		Navigator.of(context).push(
+			MaterialPageRoute(
+				builder: (_) => CommunityChatScreen(
+					community: Community(
+						id: row.id.toString(),
+						name: row.title,
+						participants: int.tryParse(
+							row.participants.replaceAll(RegExp(r'[^0-9]'), ''),
+						) ?? 0,
+						imageUrl: row.imageUrl,
+					),
+				),
+			),
+		);
 		} catch (e) {
 			if (!mounted) return;
 

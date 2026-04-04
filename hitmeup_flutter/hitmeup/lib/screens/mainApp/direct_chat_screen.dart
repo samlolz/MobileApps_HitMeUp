@@ -52,6 +52,16 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   bool _isVoicePlaying = false;
   final ImagePicker _imagePicker = ImagePicker();
 
+  String get _chatAvatarUrl {
+    final value = (widget.chat.avatarUrl ?? '').trim();
+    if (value.isEmpty) {
+      return 'assets/FallBackProfile.png';
+    }
+    return value;
+  }
+
+  bool get _chatAvatarIsAsset => _chatAvatarUrl.startsWith('assets/');
+
   @override
   void initState() {
     super.initState();
@@ -1329,11 +1339,27 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
           ),
           CircleAvatar(
             radius: 28,
-            backgroundImage: widget.chat.avatarUrl != null
-                ? NetworkImage(widget.chat.avatarUrl!)
-                : null,
             backgroundColor:
                 AppColors.pinkTop.withOpacity(0.2),
+            child: ClipOval(
+              child: SizedBox(
+                width: 56,
+                height: 56,
+                child: _chatAvatarIsAsset
+                    ? Image.asset(
+                        _chatAvatarUrl,
+                        fit: BoxFit.cover,
+                      )
+                    : Image.network(
+                        _chatAvatarUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Image.asset(
+                          'assets/FallBackProfile.png',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           Text(widget.chat.name,

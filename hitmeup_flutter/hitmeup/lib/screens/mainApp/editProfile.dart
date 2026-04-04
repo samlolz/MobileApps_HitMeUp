@@ -441,14 +441,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     if (_profilePictureUrl == null || _profilePictureUrl!.isEmpty) {
-      return Image.asset('assets/profilepic.png', fit: BoxFit.cover);
+      return Image.asset('assets/FallBackProfile.png', fit: BoxFit.cover);
     }
 
     return Image.network(
       _profilePictureUrl!,
       fit: BoxFit.cover,
       errorBuilder: (_, __, ___) {
-        return Image.asset('assets/profilepic.png', fit: BoxFit.cover);
+        return Image.asset('assets/FallBackProfile.png', fit: BoxFit.cover);
       },
     );
   }

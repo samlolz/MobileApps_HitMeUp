@@ -2,6 +2,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
+from django.utils import timezone
 
 # Create your models here.
 
@@ -192,6 +193,33 @@ class friendrequest(models.Model):
 		return f"{self.requester} -> {self.receiver} ({self.status})"
 
 
+class oauthverificationcode(models.Model):
+	PROVIDER_GOOGLE = "google"
+	PROVIDER_CHOICES = [
+		(PROVIDER_GOOGLE, "Google"),
+	]
+
+	id = models.AutoField(primary_key=True)
+	email = models.EmailField(max_length=255)
+	provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES, default=PROVIDER_GOOGLE)
+	provider_user_id = models.CharField(max_length=255, blank=True)
+	code = models.CharField(max_length=6)
+	expires_at = models.DateTimeField()
+	is_used = models.BooleanField(default=False)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		constraints = [
+			models.UniqueConstraint(fields=["email", "provider"], name="unique_oauth_code_per_email_provider"),
+		]
+
+	def has_expired(self):
+		return timezone.now() >= self.expires_at
+
+	def __str__(self):
+		return f"{self.email} ({self.provider})"
+
+
 class directmessagepoll(models.Model):
 	id = models.AutoField(primary_key=True)
 	message = models.OneToOneField(directmessage, on_delete=models.CASCADE, related_name="poll")
@@ -207,11 +235,6 @@ class directmessagepolloption(models.Model):
 	poll = models.ForeignKey(directmessagepoll, on_delete=models.CASCADE, related_name="options")
 	optionName = models.CharField(max_length=255)
 	voteCount = models.PositiveIntegerField(default=0)
-
-	class Meta:
-		constraints = [
-			models.UniqueConstraint(fields=["poll", "optionName"], name="unique_poll_option_name"),
-		]
 
 	def __str__(self):
 		return self.optionName
@@ -312,11 +335,6 @@ class communitymessagepolloption(models.Model):
 	poll = models.ForeignKey(communitymessagepoll, on_delete=models.CASCADE, related_name="options")
 	optionName = models.CharField(max_length=255)
 	voteCount = models.PositiveIntegerField(default=0)
-
-	class Meta:
-		constraints = [
-			models.UniqueConstraint(fields=["poll", "optionName"], name="unique_community_poll_option_name"),
-		]
 
 	def __str__(self):
 		return self.optionName

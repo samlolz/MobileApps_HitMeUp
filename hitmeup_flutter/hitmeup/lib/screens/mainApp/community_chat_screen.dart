@@ -84,7 +84,44 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
         _playingVoiceUrl = null;
       });
     });
+    _refreshCommunityFromBackend();
     _loadMessages();
+  }
+
+  int _asInt(dynamic value, {int fallback = 0}) {
+    if (value is int) {
+      return value;
+    }
+    return int.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
+  Future<void> _refreshCommunityFromBackend() async {
+    final communityId = _communityId;
+    if (communityId == null) {
+      return;
+    }
+
+    try {
+      final communityData = await ChatService.fetchCommunityById(communityId);
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _community = Community(
+          id: (communityData['id'] ?? _community.id).toString(),
+          name: (communityData['name'] ?? _community.name).toString(),
+          participants: _asInt(
+            communityData['totalParticipants'],
+            fallback: _community.participants,
+          ),
+          imageUrl: (communityData['communityPicture'] ?? _community.imageUrl)
+              ?.toString(),
+        );
+      });
+    } catch (_) {
+      // Keep existing value when refresh fails.
+    }
   }
 
   @override

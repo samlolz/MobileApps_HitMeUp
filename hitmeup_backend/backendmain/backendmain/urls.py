@@ -31,6 +31,9 @@ from backend.views import (
     directMessagePollViewSet,
     directMessagePollVoteViewSet,
     friendRequestViewSet,
+    oauth_signin,
+    resend_oauth_code,
+    verify_oauth_code,
     userViewSet,
 )
 
@@ -50,6 +53,9 @@ router.register(r'friend-requests', friendRequestViewSet, basename='friend-reque
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/users/oauth-signin/', oauth_signin),
+    path('api/users/verify-oauth-code/', verify_oauth_code),
+    path('api/users/resend-oauth-code/', resend_oauth_code),
     path('api/', include(router.urls)),
 ]
 

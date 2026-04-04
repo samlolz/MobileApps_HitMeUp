@@ -3,7 +3,14 @@ import '../../widgets/common_widgets.dart';
 import 'step3_birthday_screen.dart';
 
 class Step1IntroScreen extends StatefulWidget {
-  const Step1IntroScreen({super.key});
+  final String? initialName;
+  final String? initialEmail;
+
+  const Step1IntroScreen({
+    super.key,
+    this.initialName,
+    this.initialEmail,
+  });
 
   @override
   State<Step1IntroScreen> createState() => _Step1IntroScreenState();
@@ -14,6 +21,17 @@ class _Step1IntroScreenState extends State<Step1IntroScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   String? _errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialName != null && widget.initialName!.trim().isNotEmpty) {
+      _nameController.text = widget.initialName!.trim();
+    }
+    if (widget.initialEmail != null && widget.initialEmail!.trim().isNotEmpty) {
+      _emailController.text = widget.initialEmail!.trim();
+    }
+  }
 
   @override
   void dispose() {

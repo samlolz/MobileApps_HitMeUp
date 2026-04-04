@@ -320,6 +320,8 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   int _diamondBalance = 17;
   int _selectedBottomNavIndex = 2;
+  bool _isLoadingDirectChats = true;
+  bool _isLoadingCommunities = true;
   List<DirectChat> _directChats = [];
   List<_CommunityItemData> _communities = const [
     _CommunityItemData(
@@ -336,7 +338,7 @@ class _ChatScreenState extends State<ChatScreen> {
             id: chat.id.toString(),
             name: chat.name,
             message: chat.lastMessage,
-            avatarUrl: chat.avatarUrl ?? 'https://i.pravatar.cc/160?img=1',
+            avatarUrl: _resolveProfileImageUrl(chat.avatarUrl),
             directChat: chat,
           ))
       .toList();
@@ -364,9 +366,31 @@ class _ChatScreenState extends State<ChatScreen> {
     return '$base$path';
   }
 
+  String _resolveProfileImageUrl(dynamic rawPath) {
+    final value = (rawPath ?? '').toString().trim();
+    if (value.isEmpty) {
+      return 'assets/FallBackProfile.png';
+    }
+    if (value.startsWith('assets/')) {
+      return value;
+    }
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+
+    final base = ApiConfig.baseUrl.replaceAll(RegExp(r'/+$'), '');
+    final path = value.startsWith('/') ? value : '/$value';
+    return '$base$path';
+  }
+
   Future<void> _loadUserCommunities() async {
     final userId = AuthSession.instance.userId;
     if (userId == null) {
+      if (mounted) {
+        setState(() {
+          _isLoadingCommunities = false;
+        });
+      }
       return;
     }
 
@@ -406,9 +430,15 @@ class _ChatScreenState extends State<ChatScreen> {
             iconBackground: Color(0xFFD6E5EA),
           ),
         ];
+        _isLoadingCommunities = false;
       });
     } catch (_) {
       // Keep only create tile when request fails.
+      if (mounted) {
+        setState(() {
+          _isLoadingCommunities = false;
+        });
+      }
     }
   }
 
@@ -426,6 +456,11 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _loadDirectChats() async {
     final userId = AuthSession.instance.userId;
     if (userId == null) {
+      if (mounted) {
+        setState(() {
+          _isLoadingDirectChats = false;
+        });
+      }
       return;
     }
 
@@ -455,10 +490,16 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         setState(() {
           _directChats = directChats;
+          _isLoadingDirectChats = false;
         });
       }
     } catch (e) {
       // Silently fail - will just show empty chats
+      if (mounted) {
+        setState(() {
+          _isLoadingDirectChats = false;
+        });
+      }
     }
   }
 
@@ -631,63 +672,85 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     child: Column(
                       children: [
-                        Wrap(
-                          alignment: WrapAlignment.spaceBetween,
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: _communities
-                              .map((item) => _CommunityItemTile(
-                                    data: item,
-                                    onTap: () => _handleCommunityTap(item),
-                                  ))
-                              .toList(),
-                        ),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const CommunityScreen(),
-                                ),
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(6),
-                            child: const Padding(
-                              padding: EdgeInsets.only(right: 2, top: 2),
-                              child: Text(
-                                'more...',
-                                style: TextStyle(
-                                  color: Color(0xFF5A5A5A),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
+                        if (_isLoadingCommunities)
+                          const Wrap(
+                            alignment: WrapAlignment.spaceBetween,
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              _CommunityLoadingTile(),
+                              _CommunityLoadingTile(),
+                              _CommunityLoadingTile(),
+                            ],
+                          )
+                        else ...[
+                          Wrap(
+                            alignment: WrapAlignment.spaceBetween,
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: _communities
+                                .map((item) => _CommunityItemTile(
+                                      data: item,
+                                      onTap: () => _handleCommunityTap(item),
+                                    ))
+                                .toList(),
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const CommunityScreen(),
+                                  ),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(6),
+                              child: const Padding(
+                                padding: EdgeInsets.only(right: 2, top: 2),
+                                child: Text(
+                                  'more...',
+                                  style: TextStyle(
+                                    color: Color(0xFF5A5A5A),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
                   const SizedBox(height: 14),
                   // Recent chats
-                  ..._recentChats.map(
-                    (chat) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _RecentChatTile(
-                        data: chat,
-                        onTap: () {
-                          if (chat.directChat == null) return;
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  DirectChatScreen(chat: chat.directChat!),
-                            ),
-                          );
-                        },
+                  if (_isLoadingDirectChats)
+                    ...List.generate(
+                      3,
+                      (_) => const Padding(
+                        padding: EdgeInsets.only(bottom: 10),
+                        child: _RecentChatLoadingTile(),
+                      ),
+                    )
+                  else
+                    ..._recentChats.map(
+                      (chat) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _RecentChatTile(
+                          data: chat,
+                          onTap: () {
+                            if (chat.directChat == null) return;
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    DirectChatScreen(chat: chat.directChat!),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -823,6 +886,53 @@ class _CommunityItemTile extends StatelessWidget {
   }
 }
 
+class _CommunityLoadingTile extends StatelessWidget {
+  const _CommunityLoadingTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 102,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          SizedBox(
+            width: 88,
+            height: 88,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Color(0xFFE6E6E6),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: SizedBox(
+                  width: 26,
+                  height: 26,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4F8FF7)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 8),
+          SizedBox(
+            width: 70,
+            height: 10,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Color(0xFFDCDCDC),
+                borderRadius: BorderRadius.all(Radius.circular(6)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _RecentChatTile extends StatelessWidget {
   const _RecentChatTile({required this.data, required this.onTap});
 
@@ -831,6 +941,7 @@ class _RecentChatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isAssetAvatar = data.avatarUrl.startsWith('assets/');
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -847,7 +958,23 @@ class _RecentChatTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundImage: NetworkImage(data.avatarUrl),
+                backgroundColor: const Color(0xFFE0E0E0),
+                child: ClipOval(
+                  child: SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: isAssetAvatar
+                        ? Image.asset(data.avatarUrl, fit: BoxFit.cover)
+                        : Image.network(
+                            data.avatarUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Image.asset(
+                              'assets/FallBackProfile.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -882,6 +1009,58 @@ class _RecentChatTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _RecentChatLoadingTile extends StatelessWidget {
+  const _RecentChatLoadingTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F3F3),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        children: const [
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFFE0E0E0),
+              ),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4F8FF7)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: SizedBox(
+              height: 26,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Color(0xFFE6E6E6),
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'screens/splash_screen.dart';
+import 'screens/auth/verification_code_screen.dart';
+import 'screens/auth/verification_success_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -32,6 +34,18 @@ class HitMeUpApp extends StatelessWidget {
         );
       },
       home: const SplashScreen(),
+      onGenerateRoute: (settings) {
+        if (settings.name == '/verification-success') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (_) => VerificationSuccessScreen(
+              email: args?['email'] ?? '',
+              user: args?['user'] as Map<String, dynamic>?,
+            ),
+          );
+        }
+        return null;
+      },
     );
   }
 }

@@ -118,8 +118,8 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
 
       setState(() {
         _isLoadingProfiles = false;
-        _profilesError =
-            'Unable to connect to backend at ${ApiConfig.baseUrl}.';
+        _profilesError =  
+            'Unable to connect, try again later.';
       });
     }
   }
