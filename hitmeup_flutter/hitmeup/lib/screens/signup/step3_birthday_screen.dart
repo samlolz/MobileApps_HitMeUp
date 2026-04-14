@@ -21,8 +21,38 @@ class Step3BirthdayScreen extends StatefulWidget {
 }
 
 class _Step3BirthdayScreenState extends State<Step3BirthdayScreen> {
+  static const TextStyle _headerTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 25,
+    fontWeight: FontWeight.w600,
+    color: Colors.white,
+    height: 1.0,
+    letterSpacing: 0,
+  );
+
+  static const TextStyle _inputTextStyle = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 19,
+    fontWeight: FontWeight.w400,
+    color: Colors.white,
+    height: 1.0,
+    letterSpacing: 0,
+  );
+
+  static const TextStyle _continueButtonTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontSize: 19,
+    fontWeight: FontWeight.w400,
+    color: Colors.white,
+    height: 1.0,
+    letterSpacing: 0,
+  );
+
+  static const Color _continueButtonColor = Color.fromRGBO(101, 101, 101, 1);
+
   bool _showOnProfile = false;
-  DateTime _selectedDate = DateTime(DateTime.now().year - 18, DateTime.now().month, DateTime.now().day);
+  DateTime _selectedDate =
+      DateTime(DateTime.now().year - 18, DateTime.now().month, DateTime.now().day);
 
   @override
   Widget build(BuildContext context) {
@@ -47,12 +77,7 @@ class _Step3BirthdayScreenState extends State<Step3BirthdayScreen> {
                       const SizedBox(height: 36),
                       const Text(
                         'Your Birthday',
-                        style: TextStyle(
-                          fontSize: 25,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          height: 1.0,
-                        ),
+                        style: _headerTextStyle,
                       ),
                       const SizedBox(height: 24),
                       Container(
@@ -115,12 +140,12 @@ class _Step3BirthdayScreenState extends State<Step3BirthdayScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
+            Text(
               'Show on profile',
-              style: TextStyle(
+              style: _inputTextStyle.copyWith(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF6B6B6B),
+                color: const Color(0xFF6B6B6B),
               ),
             ),
             const SizedBox(width: 8),
@@ -156,8 +181,8 @@ class _Step3BirthdayScreenState extends State<Step3BirthdayScreen> {
       height: 67,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF656565),
+          backgroundColor: _continueButtonColor,
+          foregroundColor: Colors.white,
           elevation: 3,
           shadowColor: Colors.black26,
           shape: RoundedRectangleBorder(
@@ -179,12 +204,7 @@ class _Step3BirthdayScreenState extends State<Step3BirthdayScreen> {
         },
         child: const Text(
           'CONTINUE',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.5,
-            color: Color(0xFF656565),
-          ),
+          style: _continueButtonTextStyle,
         ),
       ),
     );

@@ -89,7 +89,7 @@ class _VerificationSuccessScreenState extends State<VerificationSuccessScreen> {
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
+                              color: Colors.black.withOpacity(0.1),
                               blurRadius: 20,
                               offset: const Offset(0, 4),
                             ),
@@ -116,7 +116,7 @@ class _VerificationSuccessScreenState extends State<VerificationSuccessScreen> {
                                 color: Colors.white,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.15),
+                                  color: Colors.black.withOpacity(0.15),
                                     blurRadius: 16,
                                     offset: const Offset(0, 4),
                                   ),

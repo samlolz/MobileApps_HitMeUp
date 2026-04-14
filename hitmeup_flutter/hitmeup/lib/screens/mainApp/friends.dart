@@ -333,6 +333,24 @@ class _FriendsScreenState extends State<FriendsScreen> {
 class _FriendTile extends StatelessWidget {
   const _FriendTile({required this.data});
 
+  static const TextStyle _friendNameTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.black,
+  );
+
+  static const TextStyle _friendDetailsTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontSize: 9,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Color.fromRGBO(118, 118, 118, 1),
+  );
+
   final _FriendData data;
 
   @override
@@ -386,50 +404,31 @@ class _FriendTile extends StatelessWidget {
                 children: [
                   Text(
                     data.name,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
+                    style: _friendNameTextStyle,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     data.birthday,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF767676),
-                      fontStyle: data.birthday == 'Birthday hidden'
-                          ? FontStyle.italic
-                          : FontStyle.normal,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     data.gender,
-                    style: const TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF767676),
-                    ),
+                    style: _friendDetailsTextStyle,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     data.location,
-                    style: const TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF767676),
-                    ),
+                    style: _friendDetailsTextStyle,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     data.interests,
-                    style: const TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF767676),
-                    ),
+                    style: _friendDetailsTextStyle,
                   ),
                 ],
               ),
@@ -612,7 +611,7 @@ class _BottomNavBar extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 16,
             offset: const Offset(0, -2),
           ),

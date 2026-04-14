@@ -28,13 +28,49 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   static const double _topLoadThreshold = 120.0;
   static const String _galleryPermissionMessage =
       'Please allow gallery access so you can choose an image to send.';
-    static const String _microphonePermissionMessage =
+  static const String _microphonePermissionMessage =
       'Please allow microphone access so you can record voice messages.';
+
+  static const TextStyle _chatNameTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    height: 1.0,
+    letterSpacing: 0,
+    color: Colors.black,
+  );
+
+  static const TextStyle _chatMessageTextStyle = TextStyle(
+    fontFamily: 'IBM Plex Sans Devanagari',
+    fontSize: 10,
+    fontWeight: FontWeight.w400,
+    height: 1.0,
+    letterSpacing: 0,
+    color: Colors.black87,
+  );
+
+  static const TextStyle _chatAiTitleTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    height: 1.0,
+    letterSpacing: 0,
+    color: Colors.white,
+  );
+
+  static const TextStyle _chatAiSubtitleTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontSize: 9,
+    fontWeight: FontWeight.w400,
+    height: 1.0,
+    letterSpacing: 0,
+    color: Colors.white70,
+  );
 
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-    final AudioRecorder _audioRecorder = AudioRecorder();
-    final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  final AudioPlayer _audioPlayer = AudioPlayer();
   bool _showAttachMenu = false;
   List<Map<String, dynamic>> _messages = [];
   bool _isLoading = true;
@@ -141,7 +177,10 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   }
 
   Future<void> _loadOlderMessages() async {
-    if (_isLoading || _isLoadingMoreMessages || !_hasMoreOlderMessages || _messages.isEmpty) {
+    if (_isLoading ||
+        _isLoadingMoreMessages ||
+        !_hasMoreOlderMessages ||
+        _messages.isEmpty) {
       return;
     }
 
@@ -150,8 +189,12 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       return;
     }
 
-    final oldPixels = _scrollController.hasClients ? _scrollController.position.pixels : 0.0;
-    final oldMaxScrollExtent = _scrollController.hasClients ? _scrollController.position.maxScrollExtent : 0.0;
+    final oldPixels = _scrollController.hasClients
+        ? _scrollController.position.pixels
+        : 0.0;
+    final oldMaxScrollExtent = _scrollController.hasClients
+        ? _scrollController.position.maxScrollExtent
+        : 0.0;
 
     setState(() {
       _isLoadingMoreMessages = true;
@@ -294,7 +337,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       return;
     }
 
-    // Close attach menu
     if (_showAttachMenu) {
       setState(() {
         _showAttachMenu = false;
@@ -302,13 +344,11 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
 
     try {
-      // Check permission FIRST, before setting _isPickingImage
       final hasPermission = await _ensureGalleryPermission();
       if (!hasPermission || !mounted) {
         return;
       }
 
-      // Now set to picking after permission is confirmed
       if (mounted) {
         setState(() {
           _isPickingImage = true;
@@ -427,7 +467,11 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     } on PlatformException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Camera permission or access issue: ${e.message ?? e.code}')),
+          SnackBar(
+            content: Text(
+              'Camera permission or access issue: ${e.message ?? e.code}',
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -469,7 +513,9 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: SingleChildScrollView(
@@ -479,15 +525,23 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                     children: [
                       const Text(
                         'Create Poll',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       TextField(
                         controller: questionController,
                         decoration: InputDecoration(
                           hintText: 'Poll question...',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -498,8 +552,13 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                             controller: optionControllers[index],
                             decoration: InputDecoration(
                               hintText: 'Option ${index + 1}',
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
                             ),
                           ),
                         );
@@ -511,7 +570,9 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                                 ? null
                                 : () {
                                     setDialogState(() {
-                                      optionControllers.add(TextEditingController());
+                                      optionControllers.add(
+                                        TextEditingController(),
+                                      );
                                     });
                                   },
                             icon: const Icon(Icons.add),
@@ -523,7 +584,10 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                         const SizedBox(height: 6),
                         Text(
                           validationMessage!,
-                          style: const TextStyle(color: Colors.red, fontSize: 12),
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                       const SizedBox(height: 20),
@@ -532,7 +596,9 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.pinkTop,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                           onPressed: () {
                             final question = questionController.text.trim();
@@ -562,7 +628,10 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                           },
                           child: const Text(
                             'Create',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
@@ -575,9 +644,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         );
       },
     );
-
-    // Avoid disposing controllers immediately after dialog pop because
-    // the route teardown can still reference them during this frame.
 
     if (result == null || !mounted) {
       return;
@@ -870,7 +936,11 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     if (!hasPermission || !mounted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Microphone permission is required to record voice messages.')),
+          const SnackBar(
+            content: Text(
+              'Microphone permission is required to record voice messages.',
+            ),
+          ),
         );
       }
       return;
@@ -880,7 +950,10 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     if (!canRecord || !mounted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to access microphone on this device right now.')),
+          const SnackBar(
+            content:
+                Text('Unable to access microphone on this device right now.'),
+          ),
         );
       }
       return;
@@ -1037,7 +1110,10 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     } on TimeoutException {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Voice playback timed out. Please try again.')),
+          const SnackBar(
+            content:
+                Text('Voice playback timed out. Please try again.'),
+          ),
         );
       }
     } catch (e) {
@@ -1112,7 +1188,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     });
   }
 
-  // Convert one API message to display format lazily.
   Map<String, dynamic> _toDisplayMessage(Map<String, dynamic> msg) {
     final userId = AuthSession.instance.userId;
     final senderId = msg['sender'] is int
@@ -1965,7 +2040,9 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     final sender = msg['sender'] as String? ?? '';
     final time = msg['time'] as String;
     final poll = msg['poll'] as Map<String, dynamic>;
-    final messageId = msg['id'] is int ? msg['id'] as int : int.tryParse(msg['id'].toString()) ?? -1;
+    final messageId = msg['id'] is int
+        ? msg['id'] as int
+        : int.tryParse(msg['id'].toString()) ?? -1;
     final currentUserId = AuthSession.instance.userId;
 
     final question = (poll['question'] as String?)?.trim() ?? 'Poll';
@@ -1998,18 +2075,24 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     final hasVoted = selectedOptionId != null;
     final totalVotes = options.fold<int>(
       0,
-      (sum, option) => sum + (option['voteCount'] is int ? option['voteCount'] as int : int.tryParse(option['voteCount'].toString()) ?? 0),
+      (sum, option) =>
+          sum +
+          (option['voteCount'] is int
+              ? option['voteCount'] as int
+              : int.tryParse(option['voteCount'].toString()) ?? 0),
     );
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Flexible(
             child: Container(
-              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+              constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.72),
               decoration: BoxDecoration(
                 color: isMe ? const Color(0xFF73A4F5) : Colors.white,
                 borderRadius: BorderRadius.only(
@@ -2052,11 +2135,18 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                   ),
                   const SizedBox(height: 14),
                   ...options.map((option) {
-                    final optionId = option['id'] is int ? option['id'] as int : int.tryParse(option['id'].toString()) ?? -1;
-                    final optionName = (option['optionName'] as String?)?.trim() ?? 'Option';
-                    final voteCount = option['voteCount'] is int ? option['voteCount'] as int : int.tryParse(option['voteCount'].toString()) ?? 0;
+                    final optionId = option['id'] is int
+                        ? option['id'] as int
+                        : int.tryParse(option['id'].toString()) ?? -1;
+                    final optionName =
+                        (option['optionName'] as String?)?.trim() ??
+                            'Option';
+                    final voteCount = option['voteCount'] is int
+                        ? option['voteCount'] as int
+                        : int.tryParse(option['voteCount'].toString()) ?? 0;
                     final isSelected = selectedOptionId == optionId;
-                    final progress = totalVotes == 0 ? 0.0 : voteCount / totalVotes;
+                    final progress =
+                        totalVotes == 0 ? 0.0 : voteCount / totalVotes;
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 14),
@@ -2067,7 +2157,8 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                                 if (messageId < 0 || optionId < 0) {
                                   return;
                                 }
-                                _voteOnPoll(messageId: messageId, optionId: optionId);
+                                _voteOnPoll(
+                                    messageId: messageId, optionId: optionId);
                               },
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -2077,11 +2168,19 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                               height: 24,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isSelected ? Colors.black : Colors.transparent,
-                                border: Border.all(color: Colors.black, width: 2),
+                                color:
+                                    isSelected ? Colors.black : Colors.transparent,
+                                border: Border.all(
+                                  color: Colors.black,
+                                  width: 2,
+                                ),
                               ),
                               child: isSelected
-                                  ? const Icon(Icons.check, size: 14, color: Colors.white)
+                                  ? const Icon(
+                                      Icons.check,
+                                      size: 14,
+                                      color: Colors.white,
+                                    )
                                   : null,
                             ),
                             const SizedBox(width: 10),

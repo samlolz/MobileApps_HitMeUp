@@ -33,6 +33,30 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
   static const String _microphonePermissionMessage =
       'Please allow microphone access so you can record voice messages.';
 
+  static const TextStyle _pollQuestionTextStyle = TextStyle(
+    fontFamily: 'IBM Plex Sans Devanagari',
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    height: 1.0,
+    letterSpacing: 0,
+  );
+
+  static const TextStyle _pollOptionTextStyle = TextStyle(
+    fontFamily: 'IBM Plex Sans Devanagari',
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    height: 1.0,
+    letterSpacing: 0,
+  );
+
+  static const TextStyle _pollViewVotesTextStyle = TextStyle(
+    fontFamily: 'IBM Plex Sans Devanagari',
+    fontSize: 12,
+    fontWeight: FontWeight.w200,
+    height: 1.0,
+    letterSpacing: 0,
+  );
+
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final AudioRecorder _audioRecorder = AudioRecorder();
@@ -187,7 +211,11 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
 
   Future<void> _loadOlderMessages() async {
     final communityId = _communityId;
-    if (communityId == null || _isLoading || _isLoadingMoreMessages || !_hasMoreOlderMessages || _messages.isEmpty) {
+    if (communityId == null ||
+        _isLoading ||
+        _isLoadingMoreMessages ||
+        !_hasMoreOlderMessages ||
+        _messages.isEmpty) {
       return;
     }
 
@@ -196,8 +224,12 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
       return;
     }
 
-    final oldPixels = _scrollController.hasClients ? _scrollController.position.pixels : 0.0;
-    final oldMaxScrollExtent = _scrollController.hasClients ? _scrollController.position.maxScrollExtent : 0.0;
+    final oldPixels = _scrollController.hasClients
+        ? _scrollController.position.pixels
+        : 0.0;
+    final oldMaxScrollExtent = _scrollController.hasClients
+        ? _scrollController.position.maxScrollExtent
+        : 0.0;
 
     setState(() {
       _isLoadingMoreMessages = true;
@@ -226,10 +258,14 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
           return;
         }
 
-        final newMaxScrollExtent = _scrollController.position.maxScrollExtent;
+        final newMaxScrollExtent =
+            _scrollController.position.maxScrollExtent;
         final delta = newMaxScrollExtent - oldMaxScrollExtent;
         final targetOffset = oldPixels + delta;
-        _scrollController.jumpTo(targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent));
+        _scrollController.jumpTo(targetOffset.clamp(
+          0.0,
+          _scrollController.position.maxScrollExtent,
+        ));
       });
     } catch (e) {
       if (mounted) {
@@ -473,7 +509,9 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     } on PlatformException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Camera permission or access issue: ${e.message ?? e.code}')),
+          SnackBar(
+              content: Text(
+                  'Camera permission or access issue: ${e.message ?? e.code}')),
         );
       }
     } catch (e) {
@@ -512,7 +550,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: SingleChildScrollView(
@@ -520,14 +559,18 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Create Poll', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Text('Create Poll',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 16),
                       TextField(
                         controller: questionController,
                         decoration: InputDecoration(
                           hintText: 'Poll question...',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -538,8 +581,10 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                             controller: optionControllers[index],
                             decoration: InputDecoration(
                               hintText: 'Option ${index + 1}',
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
                             ),
                           ),
                         );
@@ -551,7 +596,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                                 ? null
                                 : () {
                                     setDialogState(() {
-                                      optionControllers.add(TextEditingController());
+                                      optionControllers
+                                          .add(TextEditingController());
                                     });
                                   },
                             icon: const Icon(Icons.add),
@@ -561,7 +607,9 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                       ),
                       if (validationMessage != null) ...[
                         const SizedBox(height: 6),
-                        Text(validationMessage!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                        Text(validationMessage!,
+                            style: const TextStyle(
+                                color: Colors.red, fontSize: 12)),
                       ],
                       const SizedBox(height: 20),
                       SizedBox(
@@ -569,7 +617,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.pinkTop,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
                           ),
                           onPressed: () {
                             final question = questionController.text.trim();
@@ -580,14 +629,16 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
 
                             if (question.isEmpty) {
                               setDialogState(() {
-                                validationMessage = 'Please enter a poll question.';
+                                validationMessage =
+                                    'Please enter a poll question.';
                               });
                               return;
                             }
 
                             if (options.length < 2) {
                               setDialogState(() {
-                                validationMessage = 'Please provide at least 2 options.';
+                                validationMessage =
+                                    'Please provide at least 2 options.';
                               });
                               return;
                             }
@@ -597,7 +648,10 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                               'options': options,
                             });
                           },
-                          child: const Text('Create', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          child: const Text('Create',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
@@ -670,7 +724,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
 
       if (mounted) {
         setState(() {
-          final pendingIndex = _messages.indexWhere((message) => message['id'] == pendingId);
+          final pendingIndex =
+              _messages.indexWhere((message) => message['id'] == pendingId);
           if (pendingIndex != -1) {
             _messages[pendingIndex] = createdMessage;
           } else {
@@ -723,7 +778,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
         voterId: voterId,
       );
 
-      final updatedMessage = await ChatService.fetchCommunityMessageById(messageId);
+      final updatedMessage =
+          await ChatService.fetchCommunityMessageById(messageId);
 
       if (!mounted) {
         return;
@@ -903,7 +959,9 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     if (!hasPermission || !mounted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Microphone permission is required to record voice messages.')),
+          const SnackBar(
+              content: Text(
+                  'Microphone permission is required to record voice messages.')),
         );
       }
       return;
@@ -913,7 +971,9 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     if (!canRecord || !mounted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to access microphone on this device right now.')),
+          const SnackBar(
+              content: Text(
+                  'Unable to access microphone on this device right now.')),
         );
       }
       return;
@@ -1071,7 +1131,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
         const Duration(seconds: 15),
       );
       if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
-        throw Exception('Voice file could not be loaded (${response.statusCode}).');
+        throw Exception(
+            'Voice file could not be loaded (${response.statusCode}).');
       }
 
       setState(() {
@@ -1081,7 +1142,9 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     } on TimeoutException {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Voice playback timed out. Please try again.')),
+          const SnackBar(
+              content:
+                  Text('Voice playback timed out. Please try again.')),
         );
       }
     } catch (e) {
@@ -1163,10 +1226,13 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
         : int.tryParse(msg['sender'].toString()) ?? 0;
     final isMe = senderId == userId;
 
-    final poll = msg['poll'] is Map<String, dynamic> ? msg['poll'] as Map<String, dynamic> : null;
+    final poll = msg['poll'] is Map<String, dynamic>
+        ? msg['poll'] as Map<String, dynamic>
+        : null;
     final hasPoll = msg['hasPoll'] == true || poll != null;
     final localType = msg['localType']?.toString();
-    final senderName = (msg['senderName'] as String?)?.trim() ?? (isMe ? 'You' : 'Member');
+    final senderName =
+        (msg['senderName'] as String?)?.trim() ?? (isMe ? 'You' : 'Member');
 
     return {
       'id': msg['id'],
@@ -1252,14 +1318,16 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                         right: 0,
                         child: Center(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.85),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: const Text(
                               'Loading older messages...',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                  fontSize: 11, fontWeight: FontWeight.w600),
                             ),
                           ),
                         ),
@@ -1279,7 +1347,9 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                         final communityId = _communityId;
                         if (communityId == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Invalid community context for AI chat')),
+                            const SnackBar(
+                                content: Text(
+                                    'Invalid community context for AI chat')),
                           );
                           return;
                         }
@@ -1311,7 +1381,11 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                               height: 28,
                               fit: BoxFit.contain,
                               color: Colors.white,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.psychology_rounded, color: Colors.white, size: 28),
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.psychology_rounded,
+                                color: Colors.white,
+                                size: 28,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Container(width: 1, height: 40, color: Colors.white),
@@ -1320,8 +1394,15 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text('Ask help to Chat.AI', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
-                                Text('ask AI to help you with itinerary or others...', style: TextStyle(fontSize: 10, color: Colors.white70)),
+                                Text('Ask help to Chat.AI',
+                                    style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white)),
+                                Text(
+                                    'ask AI to help you with itinerary or others...',
+                                    style: TextStyle(
+                                        fontSize: 10, color: Colors.white70)),
                               ],
                             ),
                           ],
@@ -1337,13 +1418,16 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                         bottom: MediaQuery.of(context).padding.bottom + 8,
                       ),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
                           color: Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(28),
                           border: Border.all(color: Colors.grey.shade300),
                         ),
-                        child: _isRecordingVoice ? _buildVoiceRecorderBar() : _buildTextInputBar(),
+                        child: _isRecordingVoice
+                            ? _buildVoiceRecorderBar()
+                            : _buildTextInputBar(),
                       ),
                     ),
                   ],
@@ -1356,25 +1440,47 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                       opacity: 1.0,
                       duration: const Duration(milliseconds: 250),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 10),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           gradient: const LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [Color(0xFF448AFF), Colors.white, Color(0xFFFF4081)],
+                            colors: [
+                              Color(0xFF448AFF),
+                              Colors.white,
+                              Color(0xFFFF4081)
+                            ],
                             stops: [0.0, 0.5, 1.0],
                           ),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 12, offset: const Offset(0, 4))],
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withOpacity(0.15),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4))
+                          ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildAttachItem('assets/galleryIcon.png', 'Gallery', onTap: _pickAndSendGalleryImage),
+                            _buildAttachItem(
+                              'assets/galleryIcon.png',
+                              'Gallery',
+                              onTap: _pickAndSendGalleryImage,
+                            ),
                             const SizedBox(height: 6),
-                            _buildAttachItem('assets/cameraIcon.png', 'Camera', onTap: _pickAndSendCameraImage),
+                            _buildAttachItem(
+                              'assets/cameraIcon.png',
+                              'Camera',
+                              onTap: _pickAndSendCameraImage,
+                            ),
                             const SizedBox(height: 6),
-                            _buildAttachItem('assets/pollsIcon.png', 'Poll', onTap: _showCreatePollDialog),
+                            _buildAttachItem(
+                              'assets/pollsIcon.png',
+                              'Poll',
+                              onTap: _showCreatePollDialog,
+                            ),
                           ],
                         ),
                       ),
@@ -1400,7 +1506,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.black),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                size: 18, color: Colors.black),
             onPressed: () => Navigator.pop(context),
           ),
           GestureDetector(
@@ -1409,7 +1516,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
               final updatedCommunity = await Navigator.push<Community>(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => CommunityDetailsScreen(community: _community),
+                  builder: (_) =>
+                      CommunityDetailsScreen(community: _community),
                 ),
               );
 
@@ -1424,9 +1532,12 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
             child: CircleAvatar(
               radius: 28,
               backgroundColor: AppColors.pinkTop.withOpacity(0.2),
-              backgroundImage: imageUrl != null && !imageUrl.startsWith('assets/') ? NetworkImage(imageUrl) : null,
+              backgroundImage: imageUrl != null && !imageUrl.startsWith('assets/')
+                  ? NetworkImage(imageUrl)
+                  : null,
               child: imageUrl == null
-                  ? const Icon(Icons.people_rounded, color: AppColors.pinkTop)
+                  ? const Icon(Icons.people_rounded,
+                      color: AppColors.pinkTop)
                   : imageUrl.startsWith('assets/')
                       ? ClipOval(
                           child: Image.asset(
@@ -1434,7 +1545,9 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                             width: 56,
                             height: 56,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.people_rounded, color: AppColors.pinkTop),
+                            errorBuilder: (_, __, ___) =>
+                                const Icon(Icons.people_rounded,
+                                    color: AppColors.pinkTop),
                           ),
                         )
                       : null,
@@ -1448,7 +1561,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                 final updatedCommunity = await Navigator.push<Community>(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => CommunityDetailsScreen(community: _community),
+                    builder: (_) =>
+                        CommunityDetailsScreen(community: _community),
                   ),
                 );
 
@@ -1467,11 +1581,15 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                     _community.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+                    style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black),
                   ),
                   Text(
                     '${_community.participants} Participants',
-                    style: const TextStyle(fontSize: 11, color: Colors.black54),
+                    style: const TextStyle(
+                        fontSize: 11, color: Colors.black54),
                   ),
                 ],
               ),
@@ -1541,7 +1659,11 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                   width: 24,
                   height: 24,
                   fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.arrow_upward, color: Colors.black, size: 24),
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.arrow_upward,
+                    color: Colors.black,
+                    size: 24,
+                  ),
                 ),
         ),
       ],
@@ -1556,7 +1678,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
         Expanded(
           child: Text(
             'Recording ${_formatDuration(_voiceRecordDuration)}',
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87),
+            style: const TextStyle(
+                fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87),
           ),
         ),
         IconButton(
@@ -1599,12 +1722,14 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Flexible(
             child: Container(
-              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+              constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.7),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: isMe ? const Color(0xFF73A4F5) : Colors.white,
@@ -1614,7 +1739,13 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                   bottomLeft: Radius.circular(isMe ? 16 : 4),
                   bottomRight: Radius.circular(isMe ? 4 : 16),
                 ),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: const Offset(0, 2))],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  )
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1622,7 +1753,13 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                   if (!isMe && senderName.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
-                      child: Text(senderName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.black87)),
+                      child: Text(
+                        senderName,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.black87),
+                      ),
                     ),
                   if (imageUrl != null && imageUrl.isNotEmpty) ...[
                     ClipRRect(
@@ -1635,7 +1772,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                           height: 180,
                           color: Colors.grey.shade300,
                           alignment: Alignment.center,
-                          child: const Icon(Icons.broken_image_rounded, color: Colors.black45),
+                          child: const Icon(Icons.broken_image_rounded,
+                              color: Colors.black45),
                         ),
                       ),
                     ),
@@ -1645,17 +1783,21 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                     Container(
                       constraints: const BoxConstraints(minWidth: 170),
                       decoration: BoxDecoration(
-                        color: isMe ? Colors.white.withOpacity(0.16) : Colors.grey.shade100,
+                        color: isMe
+                            ? Colors.white.withOpacity(0.16)
+                            : Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 8),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           GestureDetector(
                             onTap: () => _toggleVoicePlayback(voiceUrl),
                             child: Icon(
-                              (_playingVoiceUrl == _resolveMediaUrl(voiceUrl) && _isVoicePlaying)
+                              (_playingVoiceUrl == _resolveMediaUrl(voiceUrl) &&
+                                      _isVoicePlaying)
                                   ? Icons.pause_circle_filled_rounded
                                   : Icons.play_circle_fill_rounded,
                               size: 28,
@@ -1668,7 +1810,10 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                               'Voice message',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87),
                             ),
                           ),
                         ],
@@ -1678,14 +1823,18 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                       const SizedBox(height: 8),
                       Text(
                         text,
-                        style: TextStyle(fontSize: 13, color: isMe ? Colors.white : Colors.black87),
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: isMe ? Colors.white : Colors.black87),
                       ),
                       const SizedBox(height: 8),
                     ],
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Text(time, style: const TextStyle(fontSize: 10, color: Colors.black45)),
+                        Text(time,
+                            style: const TextStyle(
+                                fontSize: 10, color: Colors.black45)),
                       ],
                     ),
                   ],
@@ -1698,11 +1847,17 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                           Flexible(
                             child: Text(
                               text,
-                              style: TextStyle(fontSize: 13, color: isMe ? Colors.white : Colors.black87),
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  color: isMe ? Colors.white : Colors.black87),
                             ),
                           ),
                         if (text.isNotEmpty) const SizedBox(width: 8),
-                        Text(time, style: TextStyle(fontSize: 10, color: isMe ? Colors.white70 : Colors.black45)),
+                        Text(time,
+                            style: TextStyle(
+                                fontSize: 10,
+                                color:
+                                    isMe ? Colors.white70 : Colors.black45)),
                       ],
                     ),
                 ],
@@ -1721,12 +1876,14 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Flexible(
             child: Container(
-              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+              constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.72),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               decoration: BoxDecoration(
                 color: const Color(0xFF73A4F5),
@@ -1736,7 +1893,12 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                   bottomLeft: Radius.circular(isMe ? 16 : 4),
                   bottomRight: Radius.circular(isMe ? 4 : 16),
                 ),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: const Offset(0, 2))],
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2))
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1744,7 +1906,11 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                   if (!isMe && senderName.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
-                      child: Text(senderName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+                      child: Text(senderName,
+                          style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87)),
                     ),
                   const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1752,12 +1918,18 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                       SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       ),
                       SizedBox(width: 10),
                       Text(
                         'Creating poll...',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white),
                       ),
                     ],
                   ),
@@ -1778,7 +1950,9 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
         width: double.infinity,
         child: Container(
           height: 14,
-          decoration: BoxDecoration(color: const Color(0xFF2859C5), borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(
+              color: const Color(0xFF2859C5),
+              borderRadius: BorderRadius.circular(10)),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
             child: Stack(
@@ -1937,20 +2111,30 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     final senderName = msg['senderName'] as String? ?? '';
     final time = msg['time'] as String;
     final poll = msg['poll'] as Map<String, dynamic>;
-    final messageId = msg['id'] is int ? msg['id'] as int : int.tryParse(msg['id'].toString()) ?? -1;
+    final messageId = msg['id'] is int
+        ? msg['id'] as int
+        : int.tryParse(msg['id'].toString()) ?? -1;
     final currentUserId = AuthSession.instance.userId;
 
     final question = (poll['question'] as String?)?.trim() ?? 'Poll';
-    final options = (poll['options'] as List<dynamic>? ?? const <dynamic>[]).whereType<Map<String, dynamic>>().toList();
+    final options = (poll['options'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .toList();
 
     int? selectedOptionId;
     for (final option in options) {
       final votes = option['votes'] as List<dynamic>? ?? const <dynamic>[];
       for (final vote in votes) {
         if (vote is Map<String, dynamic>) {
-          final voterId = vote['voter'] is int ? vote['voter'] as int : int.tryParse(vote['voter'].toString());
-          final optionId = option['id'] is int ? option['id'] as int : int.tryParse(option['id'].toString());
-          if (currentUserId != null && voterId == currentUserId && optionId != null) {
+          final voterId = vote['voter'] is int
+              ? vote['voter'] as int
+              : int.tryParse(vote['voter'].toString());
+          final optionId = option['id'] is int
+              ? option['id'] as int
+              : int.tryParse(option['id'].toString());
+          if (currentUserId != null &&
+              voterId == currentUserId &&
+              optionId != null) {
             selectedOptionId = optionId;
             break;
           }
@@ -1964,18 +2148,26 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     final hasVoted = selectedOptionId != null;
     final totalVotes = options.fold<int>(
       0,
-      (sum, option) => sum + (option['voteCount'] is int ? option['voteCount'] as int : int.tryParse(option['voteCount'].toString()) ?? 0),
+      (sum, option) =>
+          sum +
+          (option['voteCount'] is int
+              ? option['voteCount'] as int
+              : int.tryParse(option['voteCount'].toString()) ?? 0),
     );
+
+    final contentColor = isMe ? Colors.white : Colors.black;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Flexible(
             child: Container(
-              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+              constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.72),
               decoration: BoxDecoration(
                 color: isMe ? const Color(0xFF73A4F5) : Colors.white,
                 borderRadius: BorderRadius.only(
@@ -1984,7 +2176,13 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                   bottomLeft: Radius.circular(isMe ? 16 : 4),
                   bottomRight: Radius.circular(isMe ? 4 : 16),
                 ),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: const Offset(0, 2))],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  )
+                ],
               ),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Column(
@@ -1993,16 +2191,30 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                   if (!isMe && senderName.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
-                      child: Text(senderName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+                      child: Text(senderName,
+                          style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87)),
                     ),
-                  Text(question, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+                  Text(
+                    question,
+                    style:
+                        _pollQuestionTextStyle.copyWith(color: contentColor),
+                  ),
                   const SizedBox(height: 14),
                   ...options.map((option) {
-                    final optionId = option['id'] is int ? option['id'] as int : int.tryParse(option['id'].toString()) ?? -1;
-                    final optionName = (option['optionName'] as String?)?.trim() ?? 'Option';
-                    final voteCount = option['voteCount'] is int ? option['voteCount'] as int : int.tryParse(option['voteCount'].toString()) ?? 0;
+                    final optionId = option['id'] is int
+                        ? option['id'] as int
+                        : int.tryParse(option['id'].toString()) ?? -1;
+                    final optionName =
+                        (option['optionName'] as String?)?.trim() ?? 'Option';
+                    final voteCount = option['voteCount'] is int
+                        ? option['voteCount'] as int
+                        : int.tryParse(option['voteCount'].toString()) ?? 0;
                     final isSelected = selectedOptionId == optionId;
-                    final progress = totalVotes == 0 ? 0.0 : voteCount / totalVotes;
+                    final progress =
+                        totalVotes == 0 ? 0.0 : voteCount / totalVotes;
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 14),
@@ -2013,7 +2225,9 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                                 if (messageId < 0 || optionId < 0) {
                                   return;
                                 }
-                                _voteOnPoll(messageId: messageId, optionId: optionId);
+                                _voteOnPoll(
+                                    messageId: messageId,
+                                    optionId: optionId);
                               },
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -2023,10 +2237,18 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                               height: 24,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isSelected ? Colors.black : Colors.transparent,
-                                border: Border.all(color: Colors.black, width: 2),
+                                color: isSelected
+                                    ? Colors.black
+                                    : Colors.transparent,
+                                border: Border.all(
+                                  color: Colors.black,
+                                  width: 2,
+                                ),
                               ),
-                              child: isSelected ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
+                              child: isSelected
+                                  ? const Icon(Icons.check,
+                                      size: 14, color: Colors.white)
+                                  : null,
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -2038,11 +2260,19 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                                       Expanded(
                                         child: Text(
                                           optionName,
-                                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black),
+                                          style:
+                                              _pollOptionTextStyle.copyWith(
+                                                  color: contentColor),
                                         ),
                                       ),
                                       if (hasVoted)
-                                        Text('$voteCount', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black)),
+                                        Text(
+                                          '$voteCount',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: contentColor),
+                                        ),
                                     ],
                                   ),
                                   if (hasVoted) ...[
@@ -2062,7 +2292,9 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(time, style: const TextStyle(fontSize: 10, color: Colors.black54)),
+                        Text(time,
+                            style: const TextStyle(
+                                fontSize: 10, color: Colors.black54)),
                       ],
                     ),
                   ),
@@ -2070,7 +2302,7 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                     const SizedBox(height: 6),
                     Container(height: 2, color: Colors.white),
                     TextButton(
-                      onPressed: () => _showPollVotesDialog(poll),
+                      onPressed: () {},
                       child: const Center(
                         child: Text('View votes', style: TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w500)),
                       ),

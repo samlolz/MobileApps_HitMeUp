@@ -39,6 +39,51 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
+  static const TextStyle _changeProfilePictureTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Color.fromRGBO(68, 138, 255, 1),
+  );
+
+  static const TextStyle _profileNameTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 17,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Color(0xFF1F1F1F),
+  );
+
+  static const TextStyle _labelTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 11,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Color(0xFF202020),
+  );
+
+  static const TextStyle _inputTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 11,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Color.fromRGBO(118, 118, 118, 1),
+  );
+
+  static const TextStyle _doneButtonTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 17,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white,
+  );
+
   static const String _googlePlacesApiKey =
       'AIzaSyBC5tMGFVQ8yfUJxv9xsRf8VZgJPElr7G4';
 
@@ -124,7 +169,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             elevation: 0,
             title: Text(
               'Edit Profile',
-                style: AppTextStyles.heading.copyWith(color: Colors.black),
+              style: AppTextStyles.heading.copyWith(color: Colors.black),
             ),
           ),
           body: SafeArea(
@@ -164,11 +209,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               : _handleChangeProfilePictureTap,
                           child: const Text(
                             'Change Profile Picture',
-                            style: TextStyle(
-                              color: Color(0xFF448AFF),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            textAlign: TextAlign.center,
+                            style: _changeProfilePictureTextStyle,
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -193,11 +235,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               contentPadding: EdgeInsets.symmetric(vertical: 5),
                             ),
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1F1F1F),
-                            ),
+                            style: _profileNameTextStyle,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -248,11 +286,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 padding: EdgeInsets.only(top: 2),
                                 child: Text(
                                   'My interests',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF202020),
-                                  ),
+                                  style: _labelTextStyle,
                                 ),
                               ),
                             ),
@@ -288,10 +322,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                                 EdgeInsets.symmetric(
                                                     vertical: 5),
                                           ),
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.black,
-                                          ),
+                                          style: _inputTextStyle,
                                         ),
                                       ),
                                       if (index <
@@ -333,6 +364,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               elevation: 0,
+                              textStyle: _doneButtonTextStyle,
                             ),
                             child: _isSaving
                                 ? const SizedBox(
@@ -347,10 +379,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   )
                                 : const Text(
                                     'Done',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    textAlign: TextAlign.center,
+                                    style: _doneButtonTextStyle,
                                   ),
                           ),
                         ),
@@ -423,11 +453,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           width: 100,
           child: Text(
             'Location',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF202020),
-            ),
+            style: _labelTextStyle,
           ),
         ),
         Expanded(
@@ -490,10 +516,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             },
                           )),
               ),
-              style: const TextStyle(
-                fontSize: 11,
-                color: Colors.black,
-              ),
+              style: _inputTextStyle,
             ),
           ),
         ),
@@ -520,7 +543,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             itemCount: _locationSuggestions.length,
             separatorBuilder: (_, __) => Divider(
               height: 1,
-              color: Colors.black.withValues(alpha: 0.08),
+              color: Colors.black.withOpacity(0.08),
             ),
             itemBuilder: (context, index) {
               final suggestion = _locationSuggestions[index];
@@ -528,10 +551,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 dense: true,
                 title: Text(
                   suggestion,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.black,
-                  ),
+                  style: _inputTextStyle.copyWith(color: Colors.black),
                 ),
                 onTap: () => _selectLocationSuggestion(suggestion),
               );
@@ -684,11 +704,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           width: 100,
           child: Text(
             'Birthday date',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF202020),
-            ),
+            style: _labelTextStyle,
           ),
         ),
         Expanded(
@@ -710,10 +726,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Expanded(
                     child: Text(
                       _formatBirthday(_selectedBirthday),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.black,
-                      ),
+                      style: _inputTextStyle,
                     ),
                   ),
                   const Icon(
@@ -737,11 +750,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           width: 100,
           child: Text(
             'Gender',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF202020),
-            ),
+            style: _labelTextStyle,
           ),
         ),
         Expanded(
@@ -760,10 +769,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               child: DropdownButton<String>(
                 value: _selectedGender,
                 isExpanded: true,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Colors.black,
-                ),
+                style: _inputTextStyle,
                 items: const [
                   DropdownMenuItem(value: 'male', child: Text('Male')),
                   DropdownMenuItem(value: 'female', child: Text('Female')),

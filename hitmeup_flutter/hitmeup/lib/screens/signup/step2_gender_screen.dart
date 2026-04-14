@@ -21,6 +21,35 @@ class Step2GenderScreen extends StatefulWidget {
 }
 
 class _Step2GenderScreenState extends State<Step2GenderScreen> {
+  static const TextStyle _headerTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 25,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white,
+  );
+
+  static const TextStyle _inputTextStyle = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 19,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white,
+  );
+
+  static const TextStyle _continueButtonTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontSize: 19,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white,
+  );
+
+  static const Color _continueButtonColor = Color.fromRGBO(101, 101, 101, 1);
+
   String? _selectedGender;
   String? _errorText;
 
@@ -47,21 +76,14 @@ class _Step2GenderScreenState extends State<Step2GenderScreen> {
                       const SizedBox(height: 36),
                       const Text(
                         'Your Gender',
-                        style: TextStyle(
-                          fontSize: 25,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          height: 1.0,
-                        ),
+                        style: _headerTextStyle,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Choose the gender that best describe you',
-                        style: TextStyle(
+                        style: _inputTextStyle.copyWith(
                           fontSize: 18,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.white,
-                          height: 1.0,
+                          color: Colors.white70,
                         ),
                       ),
                       const SizedBox(height: 48),
@@ -79,13 +101,10 @@ class _Step2GenderScreenState extends State<Step2GenderScreen> {
                         ),
                       ],
                       const SizedBox(height: 240),
-                      const Text(
+                      Text(
                         'Make friends with people\nwho match your vibe!',
-                        style: TextStyle(
-                          fontSize: 25,
+                        style: _headerTextStyle.copyWith(
                           fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                          height: 1.0,
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -97,7 +116,7 @@ class _Step2GenderScreenState extends State<Step2GenderScreen> {
                         ),
                       ),
                       const Spacer(),
-                      _buildContinueButton(context),
+                      _buildContinueButton(),
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -129,9 +148,7 @@ class _Step2GenderScreenState extends State<Step2GenderScreen> {
         child: Center(
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+            style: _inputTextStyle.copyWith(
               color: isSelected ? Colors.white : Colors.black87,
             ),
           ),
@@ -140,14 +157,14 @@ class _Step2GenderScreenState extends State<Step2GenderScreen> {
     );
   }
 
-  Widget _buildContinueButton(BuildContext context) {
+  Widget _buildContinueButton() {
     return SizedBox(
       width: double.infinity,
       height: 67,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF656565),
+          backgroundColor: _continueButtonColor,
+          foregroundColor: Colors.white,
           elevation: 3,
           shadowColor: Colors.black26,
           shape: RoundedRectangleBorder(
@@ -179,12 +196,7 @@ class _Step2GenderScreenState extends State<Step2GenderScreen> {
         },
         child: const Text(
           'CONTINUE',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.5,
-            color: Color(0xFF656565),
-          ),
+          style: _continueButtonTextStyle,
         ),
       ),
     );

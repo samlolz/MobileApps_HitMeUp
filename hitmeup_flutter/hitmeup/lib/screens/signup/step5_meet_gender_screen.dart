@@ -25,6 +25,35 @@ class Step5MeetGenderScreen extends StatefulWidget {
 }
 
 class _Step5MeetGenderScreenState extends State<Step5MeetGenderScreen> {
+  static const TextStyle _headerTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 25,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white,
+  );
+
+  static const TextStyle _inputTextStyle = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 19,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white,
+  );
+
+  static const TextStyle _continueButtonTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontSize: 19,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white,
+  );
+
+  static const Color _continueButtonColor = Color.fromRGBO(101, 101, 101, 1);
+
   String? _selected;
 
   @override
@@ -50,21 +79,14 @@ class _Step5MeetGenderScreenState extends State<Step5MeetGenderScreen> {
                       const SizedBox(height: 36),
                       const Text(
                         'Who do you want to meet?',
-                        style: TextStyle(
-                          fontSize: 25,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          height: 1.0,
-                        ),
+                        style: _headerTextStyle,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Choose the gender that you want to meet',
-                        style: TextStyle(
+                        style: _inputTextStyle.copyWith(
                           fontSize: 18,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.white,
-                          height: 1.0,
+                          color: Colors.white70,
                         ),
                       ),
                       const SizedBox(height: 48),
@@ -106,9 +128,7 @@ class _Step5MeetGenderScreenState extends State<Step5MeetGenderScreen> {
         child: Center(
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+            style: _inputTextStyle.copyWith(
               color: isSelected ? Colors.white : Colors.black87,
             ),
           ),
@@ -123,8 +143,8 @@ class _Step5MeetGenderScreenState extends State<Step5MeetGenderScreen> {
       height: 67,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF656565),
+          backgroundColor: _continueButtonColor,
+          foregroundColor: Colors.white,
           elevation: 3,
           shadowColor: Colors.black26,
           shape: RoundedRectangleBorder(
@@ -149,12 +169,7 @@ class _Step5MeetGenderScreenState extends State<Step5MeetGenderScreen> {
         },
         child: const Text(
           'CONTINUE',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.5,
-            color: Color(0xFF656565),
-          ),
+          style: _continueButtonTextStyle,
         ),
       ),
     );

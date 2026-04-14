@@ -22,6 +22,42 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  static const TextStyle _profileNameTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 17,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Color(0xFF1F1F1F),
+  );
+
+  static const TextStyle _profileInfoLabelStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 11,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Color(0xFF202020),
+  );
+
+  static const TextStyle _profileInfoValueStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 11,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Color.fromRGBO(118, 118, 118, 1),
+  );
+
+  static const TextStyle _editButtonTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 17,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white,
+  );
+
   int _diamondBalance = 17;
   bool _isLoadingProfile = true;
   String? _profileError;
@@ -427,16 +463,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.92),
+                      color: Colors.white.withOpacity(0.92),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
                       _name,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1F1F1F),
-                      ),
+                      textAlign: TextAlign.center,
+                      style: _profileNameTextStyle,
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -447,33 +480,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.84),
+                      color: Colors.white.withOpacity(0.84),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Column(
                       children: [
                         _ProfileInfoRow(
                           label: 'Birthday date',
-                          value: _showBirthday ? _birthday : 'Hidden',
+                          value: _birthday,
+                          labelStyle: _profileInfoLabelStyle,
+                          valueStyle: _profileInfoValueStyle,
                         ),
                         const SizedBox(height: 10),
-                        _ProfileInfoRow(label: 'Gender', value: _gender),
+                        _ProfileInfoRow(
+                          label: 'Gender',
+                          value: _gender,
+                          labelStyle: _profileInfoLabelStyle,
+                          valueStyle: _profileInfoValueStyle,
+                        ),
                         const SizedBox(height: 10),
                         _ProfileInfoRow(
                           label: 'Location',
                           value: _location,
-                          alignTop: true,
+                          labelStyle: _profileInfoLabelStyle,
+                          valueStyle: _profileInfoValueStyle,
                         ),
                         const SizedBox(height: 10),
                         _ProfileInfoRow(
                           label: 'My interests',
                           value: _interests.join('\n'),
                           alignTop: true,
+                          labelStyle: _profileInfoLabelStyle,
+                          valueStyle: _profileInfoValueStyle,
                         ),
                         const SizedBox(height: 10),
                         _ProfileInfoRow(
                           label: 'Who do you want to meet?',
                           value: _wantToMeet,
+                          labelStyle: _profileInfoLabelStyle,
+                          valueStyle: _profileInfoValueStyle,
                         ),
                       ],
                     ),
@@ -494,12 +539,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        textStyle: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        textStyle: _editButtonTextStyle,
                       ),
-                      child: const Text('Edit profile'),
+                      child: const Text(
+                        'Edit profile',
+                        style: _editButtonTextStyle,
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
                 ],
@@ -686,11 +732,15 @@ class _ProfileInfoRow extends StatelessWidget {
     required this.label,
     required this.value,
     this.alignTop = false,
+    required this.labelStyle,
+    required this.valueStyle,
   });
 
   final String label;
   final String value;
   final bool alignTop;
+  final TextStyle labelStyle;
+  final TextStyle valueStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -704,9 +754,8 @@ class _ProfileInfoRow extends StatelessWidget {
             padding: EdgeInsets.only(top: alignTop ? 2 : 0),
             child: Text(
               label,
-              softWrap: true,
-              maxLines: 2,
-              overflow: TextOverflow.visible,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -716,17 +765,15 @@ class _ProfileInfoRow extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(top: alignTop ? 2 : 0),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                value,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black.withValues(alpha: 0.52),
-                ),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                height: 1.25,
+                fontWeight: FontWeight.w500,
+                color: Colors.black.withOpacity(0.52),
               ),
             ),
           ),
@@ -750,7 +797,7 @@ class _BottomNavBar extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 16,
             offset: const Offset(0, -2),
           ),

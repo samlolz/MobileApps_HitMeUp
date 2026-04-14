@@ -18,6 +18,54 @@ class RequestsScreen extends StatefulWidget {
 }
 
 class _RequestsScreenState extends State<RequestsScreen> {
+  static const TextStyle _profileNameTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white,
+  );
+
+  static const TextStyle _profileLevelTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontSize: 11,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.black87,
+  );
+
+  static const TextStyle _sectionTitleTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.black87,
+  );
+
+  static const TextStyle _cardNameTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white,
+  );
+
+  static const TextStyle _cardLevelTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontSize: 11,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white,
+  );
+
+  static const Color _profileLevelBackgroundColor =
+      Color.fromRGBO(204, 204, 204, 1);
+
   int _diamondBalance = 17;
   int _selectedBottomNavIndex = 1;
   String _currentUserName = 'Alfraz Aldebaran';
@@ -93,7 +141,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
       final diamondsRaw = decoded['diamonds'];
       final diamonds = diamondsRaw is int
           ? diamondsRaw
-          : int.tryParse(diamondsRaw?.toString() ?? '');
+          : int.tryParse(diamondsRaw?.toString() ?? '') ?? 0;
 
       if (!mounted || diamonds == null) {
         return;
@@ -159,7 +207,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
             : int.tryParse(requesterIdRaw?.toString() ?? '');
         final requestId = requestIdRaw is int
             ? requestIdRaw
-            : int.tryParse(requestIdRaw?.toString() ?? '');
+            : int.tryParse(requestIdRaw?.toString() ?? '') ?? 0;
 
         if (requesterId == null || requestId == null) {
           continue;
@@ -348,7 +396,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
             final diamondsRaw = refreshed['diamonds'];
             final diamonds = diamondsRaw is int
                 ? diamondsRaw
-                : int.tryParse(diamondsRaw?.toString() ?? '');
+                : int.tryParse(diamondsRaw?.toString() ?? '') ?? 0;
             if (diamonds != null) {
               setState(() {
                 _diamondBalance = diamonds;
@@ -563,24 +611,28 @@ class _RequestsScreenState extends State<RequestsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(_currentUserName,
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white)),
+                                style: _profileNameTextStyle),
                             const SizedBox(height: 4),
-                            Text(_currentUserLevel,
-                                style: const TextStyle(
-                                    fontSize: 11, color: Color(0xFFCCCCCC))),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: _profileLevelBackgroundColor,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(_currentUserLevel,
+                                  style: _profileLevelTextStyle),
+                            ),
                           ],
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    const Text('Get more friends',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87)),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('Get more friends',
+                          style: _sectionTitleTextStyle),
+                    ),
                     const SizedBox(height: 12),
                   ],
                 ),
@@ -728,7 +780,8 @@ class _RequestCard extends StatelessWidget {
               top: 8,
               left: 8,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFF7BC2D2),
                   borderRadius: BorderRadius.circular(18),
@@ -810,12 +863,22 @@ class _RequestCard extends StatelessWidget {
                 children: [
                   Text('${data.name} (${data.age})',
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold)),
+                        fontFamily: 'Konkhmer Sleokchher',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white,
+                        height: 1.0,
+                        letterSpacing: 0,
+                      )),
                   Text('Level ${data.level}',
-                      style:
-                          const TextStyle(color: Colors.white, fontSize: 11)),
+                      style: const TextStyle(
+                        fontFamily: 'Konkhmer Sleokchher',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white,
+                        height: 1.0,
+                        letterSpacing: 0,
+                      )),
                 ],
               ),
             ),
@@ -858,8 +921,8 @@ class _BottomNavBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
+              BoxShadow(
+              color: Colors.black.withOpacity(0.08),
               blurRadius: 16,
               offset: const Offset(0, -2))
         ],

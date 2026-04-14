@@ -18,6 +18,69 @@ class CommunityDetailsScreen extends StatefulWidget {
 }
 
 class _CommunityDetailsScreenState extends State<CommunityDetailsScreen> {
+  static const TextStyle _changePictureTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontWeight: FontWeight.w500,
+    fontSize: 12,
+    height: 1.0,
+    letterSpacing: 0,
+    color: Color.fromRGBO(68, 138, 255, 1),
+  );
+
+  static const TextStyle _communityNameTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontWeight: FontWeight.w500,
+    fontSize: 17,
+    height: 1.0,
+    letterSpacing: 0,
+    color: AppColors.textDark,
+  );
+
+  static const TextStyle _communityNameHintTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontWeight: FontWeight.w500,
+    fontSize: 17,
+    height: 1.0,
+    letterSpacing: 0,
+    color: AppColors.textGrey,
+  );
+
+  static const TextStyle _fieldLabelTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontWeight: FontWeight.w500,
+    fontSize: 11,
+    height: 1.0,
+    letterSpacing: 0,
+    color: AppColors.textDark,
+  );
+
+  static const TextStyle _fieldInputTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontWeight: FontWeight.w500,
+    fontSize: 11,
+    height: 1.0,
+    letterSpacing: 0,
+    color: Color.fromRGBO(118, 118, 118, 1),
+  );
+
+  static const TextStyle _fieldHintTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontWeight: FontWeight.w500,
+    fontSize: 11,
+    height: 1.0,
+    letterSpacing: 0,
+    color: Color.fromRGBO(118, 118, 118, 1),
+  );
+
+  static const TextStyle _saveButtonTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontWeight: FontWeight.w500,
+    fontSize: 17,
+    height: 1.0,
+    letterSpacing: 0,
+    color: Colors.white,
+  );
+
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
   final TextEditingController _maxController = TextEditingController();
@@ -148,7 +211,8 @@ class _CommunityDetailsScreenState extends State<CommunityDetailsScreen> {
                             onPressed: _isPickingImage ? null : _handleChangeCommunityPictureTap,
                             child: const Text(
                               'Change Community Picture',
-                              style: TextStyle(color: AppColors.blueBottom, fontSize: 14),
+                              style: _changePictureTextStyle,
+                              textAlign: TextAlign.center,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -166,10 +230,10 @@ class _CommunityDetailsScreenState extends State<CommunityDetailsScreen> {
                               expands: true,
                               minLines: null,
                               maxLines: null,
-                              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                              style: _communityNameTextStyle,
                               decoration: const InputDecoration(
                                 hintText: 'Community name',
-                                hintStyle: TextStyle(color: AppColors.textGrey, fontSize: 17),
+                                hintStyle: _communityNameHintTextStyle,
                                 border: InputBorder.none,
                                 isDense: false,
                                 contentPadding: EdgeInsets.symmetric(horizontal: 8),
@@ -180,11 +244,7 @@ class _CommunityDetailsScreenState extends State<CommunityDetailsScreen> {
                           const Text(
                             'Community description',
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textDark,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: _fieldLabelTextStyle,
                           ),
                           const SizedBox(height: 6),
                           Container(
@@ -200,10 +260,10 @@ class _CommunityDetailsScreenState extends State<CommunityDetailsScreen> {
                               expands: true,
                               minLines: null,
                               maxLines: null,
-                              style: const TextStyle(fontSize: 11, color: AppColors.textDark),
+                              style: _fieldInputTextStyle,
                               decoration: const InputDecoration(
                                 hintText: 'Input description',
-                                hintStyle: TextStyle(color: AppColors.textGrey, fontSize: 11),
+                                hintStyle: _fieldHintTextStyle,
                                 border: InputBorder.none,
                                 isDense: false,
                                 contentPadding: EdgeInsets.symmetric(horizontal: 10),
@@ -214,11 +274,7 @@ class _CommunityDetailsScreenState extends State<CommunityDetailsScreen> {
                           const Text(
                             'Maximum participants',
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textDark,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: _fieldLabelTextStyle,
                           ),
                           const SizedBox(height: 6),
                           Container(
@@ -236,10 +292,10 @@ class _CommunityDetailsScreenState extends State<CommunityDetailsScreen> {
                               maxLines: null,
                               keyboardType: TextInputType.number,
                               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              style: const TextStyle(fontSize: 11, color: AppColors.textDark),
+                              style: _fieldInputTextStyle,
                               decoration: const InputDecoration(
                                 hintText: 'Input number',
-                                hintStyle: TextStyle(color: AppColors.textGrey, fontSize: 11),
+                                hintStyle: _fieldHintTextStyle,
                                 border: InputBorder.none,
                                 isDense: false,
                                 contentPadding: EdgeInsets.symmetric(horizontal: 10),
@@ -268,7 +324,8 @@ class _CommunityDetailsScreenState extends State<CommunityDetailsScreen> {
                                     )
                                   : const Text(
                                       'Save',
-                                      style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                                      style: _saveButtonTextStyle,
+                                      textAlign: TextAlign.center,
                                     ),
                             ),
                           ),

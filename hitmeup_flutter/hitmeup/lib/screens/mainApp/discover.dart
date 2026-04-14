@@ -82,6 +82,7 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
         }
       }
 
+      final currentUserWantToMeet = currentUser?['wanttomeet'] as String?;
       final friendIds = _extractUserIds(currentUser?['friends']);
       final sentRequestCounterpartyIds = await _loadSentRequestCounterpartyIds(currentUserId);
       final pendingReceivedRequestCounterpartyIds =
@@ -96,9 +97,6 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
       final currentDiamonds = currentDiamondsRaw is int
           ? currentDiamondsRaw
           : int.tryParse(currentDiamondsRaw?.toString() ?? '');
-      final currentUserWantToMeet =
-          (currentUser?['wanttomeet'] ?? AuthSession.instance.currentUser?['wanttomeet'])
-              ?.toString();
 
       final mappedProfiles = users
           .where((u) {
@@ -735,6 +733,33 @@ class _SwipeCardScreenState extends State<SwipeCardScreen> {
 class _ProfileCard extends StatelessWidget {
   const _ProfileCard({required this.profile});
 
+  static const TextStyle _nameAgeTextStyle = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 48,
+    fontWeight: FontWeight.w600,
+    height: 1.0,
+    letterSpacing: 0,
+    color: Colors.white,
+  );
+
+  static const TextStyle _levelTextStyle = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 19,
+    fontWeight: FontWeight.w600,
+    height: 1.0,
+    letterSpacing: 0,
+    color: Colors.white,
+  );
+
+  static const TextStyle _locationTextStyle = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 19,
+    fontWeight: FontWeight.w600,
+    height: 1.0,
+    letterSpacing: 0,
+    color: Colors.white,
+  );
+
   final ProfileCardData profile;
 
   @override
@@ -768,9 +793,9 @@ class _ProfileCard extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withValues(alpha: 0.08),
-                      Colors.black.withValues(alpha: 0.18),
-                      Colors.black.withValues(alpha: 0.62),
+                      Colors.black.withOpacity(0.08),
+                      Colors.black.withOpacity(0.18),
+                      Colors.black.withOpacity(0.62),
                     ],
                     stops: const [0, 0.45, 1],
                   ),
@@ -829,30 +854,17 @@ class _ProfileCard extends StatelessWidget {
                   children: [
                     Text(
                       '${profile.name} ${profile.age}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.w800,
-                        height: 1,
-                      ),
+                      style: _nameAgeTextStyle,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Level ${profile.level}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: _levelTextStyle,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       profile.location,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: _locationTextStyle,
                     ),
                   ],
                 ),
@@ -917,7 +929,7 @@ class _BottomNavBar extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 16,
             offset: const Offset(0, -2),
           ),

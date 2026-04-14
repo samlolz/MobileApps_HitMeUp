@@ -40,6 +40,33 @@ class _AiChatScreenState extends State<AiChatScreen> {
   static const String _microphonePermissionMessage =
       'Please allow microphone access so you can record voice messages.';
 
+  static const TextStyle _chatBubbleTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontWeight: FontWeight.w600,
+    fontSize: 11,
+    height: 1.0,
+    letterSpacing: 0,
+    color: Colors.black87,
+  );
+
+  static const TextStyle _chatInputTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontWeight: FontWeight.w400,
+    fontSize: 12,
+    height: 1.0,
+    letterSpacing: 0,
+    color: Colors.black,
+  );
+
+  static const TextStyle _chatInputHintTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontWeight: FontWeight.w400,
+    fontSize: 12,
+    height: 1.0,
+    letterSpacing: 0,
+    color: Colors.black38,
+  );
+
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final AudioRecorder _audioRecorder = AudioRecorder();
@@ -1408,11 +1435,12 @@ class _AiChatScreenState extends State<AiChatScreen> {
             controller: _controller,
             decoration: const InputDecoration(
               hintText: 'Ask Chat.AI anything...',
-              hintStyle: TextStyle(color: Colors.black38),
+              hintStyle: _chatInputHintTextStyle,
               border: InputBorder.none,
               isDense: true,
               contentPadding: EdgeInsets.zero,
             ),
+            style: _chatInputTextStyle,
             onSubmitted: (_) => _sendMessage(),
           ),
         ),
@@ -1531,7 +1559,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   if (text.trim().isNotEmpty)
                     Text(
                       text,
-                      style: const TextStyle(fontSize: 13, color: Colors.black87),
+                      style: _chatBubbleTextStyle,
                     ),
                   if (imageUrl != null && imageUrl.trim().isNotEmpty) ...[
                     if (text.trim().isNotEmpty) const SizedBox(height: 8),
@@ -1572,9 +1600,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
                               color: Colors.black87,
                             ),
                             const SizedBox(width: 8),
-                            const Text(
+                            Text(
                               'Voice message',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                              style: _chatBubbleTextStyle,
                             ),
                           ],
                         ),

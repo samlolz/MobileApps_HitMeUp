@@ -20,6 +20,42 @@ class Step1IntroScreen extends StatefulWidget {
 }
 
 class _Step1IntroScreenState extends State<Step1IntroScreen> {
+  static const TextStyle _screenTitleTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontSize: 30,
+    fontWeight: FontWeight.w600,
+    color: Colors.white,
+    height: 1.0,
+  );
+
+  static const TextStyle _inputTextStyle = TextStyle(
+    fontFamily: 'Inria Serif',
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: Colors.white,
+  );
+
+  static const TextStyle _inputHintTextStyle = TextStyle(
+    fontFamily: 'Inria Serif',
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: Colors.white,
+  );
+
+  static const TextStyle _buttonTextStyle = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 1.5,
+    color: Color(0xFF656565),
+  );
+
+  static const TextStyle _errorTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    color: Color.fromARGB(255, 247, 107, 107),
+    fontSize: 12,
+  );
+
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -148,12 +184,7 @@ class _Step1IntroScreenState extends State<Step1IntroScreen> {
                       const SizedBox(height: 36),
                       const Text(
                         'Hello! Please introduce\nyourself',
-                        style: TextStyle(
-                          fontSize: 25,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          height: 1.0,
-                        ),
+                        style: _screenTitleTextStyle,
                       ),
                       const SizedBox(height: 20),
                       Container(
@@ -183,10 +214,7 @@ class _Step1IntroScreenState extends State<Step1IntroScreen> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             _errorText!,
-                            style: const TextStyle(
-                              color: Color.fromARGB(255, 247, 107, 107),
-                              fontSize: 12,
-                            ),
+                            style: _errorTextStyle,
                           ),
                         ),
                       ],
@@ -222,18 +250,10 @@ class _Step1IntroScreenState extends State<Step1IntroScreen> {
       child: TextField(
         controller: controller,
         obscureText: obscure,
-        style: const TextStyle(
-          fontSize: 19,
-          fontWeight: FontWeight.w400,
-          color: Colors.white,
-        ),
+        style: _inputTextStyle,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(
-            fontSize: 19,
-            fontWeight: FontWeight.w400,
-            color: Colors.white,
-          ),
+          hintStyle: _inputHintTextStyle,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
@@ -267,12 +287,7 @@ class _Step1IntroScreenState extends State<Step1IntroScreen> {
               )
             : const Text(
                 'CONTINUE',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
-                  color: Color(0xFF656565),
-                ),
+                style: _buttonTextStyle,
               ),
       ),
     );

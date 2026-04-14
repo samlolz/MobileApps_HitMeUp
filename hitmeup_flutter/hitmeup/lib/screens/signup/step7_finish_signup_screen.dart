@@ -5,6 +5,24 @@ import '../mainApp/discover.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
+  static const TextStyle _headerTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 25,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white,
+  );
+
+  static const TextStyle _subtitleTextStyle = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 19,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white70,
+  );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,20 +38,13 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 20),
                 const Text(
                   'Welcome to HitMeUp! 🎉',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  style: _headerTextStyle,
                 ),
                 const SizedBox(height: 12),
                 const Text(
                   'Your profile is ready.\nStart connecting!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                  ),
+                  style: _subtitleTextStyle,
                 ),
                 const SizedBox(height: 40),
                 Padding(
@@ -42,9 +53,9 @@ class HomeScreen extends StatelessWidget {
                     label: 'EXPLORE',
                     onPressed: () {
                       Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const SwipeCardScreen(),
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SwipeCardScreen(),
                         ),
                       );
                     },

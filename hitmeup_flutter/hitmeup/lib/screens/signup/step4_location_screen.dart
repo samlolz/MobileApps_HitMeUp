@@ -30,6 +30,44 @@ class Step4LocationScreen extends StatefulWidget {
 class _Step4LocationScreenState extends State<Step4LocationScreen> {
   static const String _googlePlacesApiKey = 'AIzaSyBC5tMGFVQ8yfUJxv9xsRf8VZgJPElr7G4';
 
+  static const TextStyle _headerTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 25,
+    fontWeight: FontWeight.w600,
+    color: Colors.white,
+    height: 1.0,
+    letterSpacing: 0,
+  );
+
+  static const TextStyle _inputTextStyle = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 19,
+    fontWeight: FontWeight.w400,
+    color: Colors.white,
+    height: 1.0,
+    letterSpacing: 0,
+  );
+
+  static const TextStyle _inputHintTextStyle = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 19,
+    fontWeight: FontWeight.w400,
+    color: Color.fromRGBO(255, 255, 255, 0.65),
+    height: 1.0,
+    letterSpacing: 0,
+  );
+
+  static const TextStyle _continueButtonTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontSize: 19,
+    fontWeight: FontWeight.w400,
+    color: Colors.white,
+    height: 1.0,
+    letterSpacing: 0,
+  );
+
+  static const Color _continueButtonColor = Color.fromRGBO(101, 101, 101, 1);
+
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
 
@@ -55,11 +93,6 @@ class _Step4LocationScreenState extends State<Step4LocationScreen> {
     'Medan',
     'Makassar',
   ];
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   void dispose() {
@@ -209,12 +242,7 @@ class _Step4LocationScreenState extends State<Step4LocationScreen> {
                       const SizedBox(height: 36),
                       const Text(
                         'Where do you live?',
-                        style: TextStyle(
-                          fontSize: 25,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          height: 1.0,
-                        ),
+                        style: _headerTextStyle,
                       ),
                       const SizedBox(height: 32),
                       _buildLocationSearch(),
@@ -248,11 +276,11 @@ class _Step4LocationScreenState extends State<Step4LocationScreen> {
           child: TextField(
             controller: _searchController,
             onChanged: _onSearchChanged,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
+            style: _inputTextStyle,
             cursorColor: Colors.white,
             decoration: InputDecoration(
               hintText: 'Search your city',
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.65)),
+              hintStyle: _inputHintTextStyle,
               border: InputBorder.none,
               icon: const Icon(Icons.search, color: Colors.white),
               suffixIcon: _isLoading
@@ -289,9 +317,9 @@ class _Step4LocationScreenState extends State<Step4LocationScreen> {
             alignment: Alignment.centerLeft,
             child: Text(
               _errorText!,
-              style: const TextStyle(
-                color: Color(0xFFFFD8D8),
+              style: _inputTextStyle.copyWith(
                 fontSize: 12,
+                color: const Color(0xFFFFD8D8),
               ),
             ),
           ),
@@ -302,7 +330,7 @@ class _Step4LocationScreenState extends State<Step4LocationScreen> {
             constraints: const BoxConstraints(maxHeight: 220),
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF4C3F79).withValues(alpha: 0.95),
+                color: const Color(0xFF4C3F79).withOpacity(0.95),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFF6750A4), width: 1),
               ),
@@ -311,7 +339,7 @@ class _Step4LocationScreenState extends State<Step4LocationScreen> {
                 itemCount: _suggestions.length,
                 separatorBuilder: (_, __) => Divider(
                   height: 1,
-                  color: Colors.white.withValues(alpha: 0.12),
+                  color: Colors.white.withOpacity(0.12),
                 ),
                 itemBuilder: (context, index) {
                   final suggestion = _suggestions[index];
@@ -319,7 +347,7 @@ class _Step4LocationScreenState extends State<Step4LocationScreen> {
                     dense: true,
                     title: Text(
                       suggestion,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: _inputTextStyle.copyWith(color: Colors.white),
                     ),
                     onTap: () => _onSelectSuggestion(suggestion),
                   );
@@ -338,8 +366,8 @@ class _Step4LocationScreenState extends State<Step4LocationScreen> {
       height: 67,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF656565),
+          backgroundColor: _continueButtonColor,
+          foregroundColor: Colors.white,
           elevation: 3,
           shadowColor: Colors.black26,
           shape: RoundedRectangleBorder(
@@ -365,12 +393,7 @@ class _Step4LocationScreenState extends State<Step4LocationScreen> {
               },
         child: const Text(
           'CONTINUE',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.5,
-            color: Color(0xFF656565),
-          ),
+          style: _continueButtonTextStyle,
         ),
       ),
     );

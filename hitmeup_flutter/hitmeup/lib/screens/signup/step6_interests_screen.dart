@@ -34,26 +34,86 @@ class Step6InterestsScreen extends StatefulWidget {
 }
 
 class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
+  static const TextStyle _headerTextStyle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 25,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white,
+  );
+
+  static const TextStyle _inputTextStyle = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 19,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white,
+  );
+
+  static const TextStyle _optionTextStyle = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 19,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.black87,
+  );
+
+  static const TextStyle _continueButtonTextStyle = TextStyle(
+    fontFamily: 'Konkhmer Sleokchher',
+    fontSize: 19,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.0,
+    color: Colors.white,
+  );
+
+  static const Color _continueButtonColor = Color.fromRGBO(101, 101, 101, 1);
+
   final Map<String, String?> _selectedInterests = {};
   bool _isSubmitting = false;
   String? _submitError;
 
   final Map<String, List<String>> _categories = {
     'Lifestyles': [
-      'Content Creator', 'Gamer', 'Youtuber', 'Actor',
-      'Voice Actor', 'Choreographer', 'Streamer', 'Freelance',
+      'Content Creator',
+      'Gamer',
+      'Youtuber',
+      'Actor',
+      'Voice Actor',
+      'Choreographer',
+      'Streamer',
+      'Freelance',
     ],
     'TV & Movies': [
-      'Amazon Prime', 'TV', 'Netflix', 'Disney+',
-      'Video', 'WeTv', 'Drakor.id',
+      'Amazon Prime',
+      'TV',
+      'Netflix',
+      'Disney+',
+      'Video',
+      'WeTv',
+      'Drakor.id',
     ],
     'Activities': [
-      'Social Media', 'Vlogging', 'Youtube', 'Memes',
-      'Video Gaming', 'Film Making', 'Theatre', 'Thrifting',
+      'Social Media',
+      'Vlogging',
+      'Youtube',
+      'Memes',
+      'Video Gaming',
+      'Film Making',
+      'Theatre',
+      'Thrifting',
     ],
     'Games': [
-      'Mobile Legends', 'PUBG', 'Roblox', 'Township',
-      'Candy Crush', 'Freefire', 'Hayday',
+      'Mobile Legends',
+      'PUBG',
+      'Roblox',
+      'Township',
+      'Candy Crush',
+      'Freefire',
+      'Hayday',
     ],
   };
 
@@ -89,10 +149,9 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
                             children: [
                               Text(
                                 entry.key,
-                                style: const TextStyle(
+                                style: _inputTextStyle.copyWith(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                               const SizedBox(height: 14),
@@ -105,10 +164,12 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
                                       const SizedBox(width: 8),
                                   itemBuilder: (_, i) {
                                     final item = entry.value[i];
-                                    final isSelected = _selectedInterests[entry.key] == item;
+                                    final isSelected =
+                                        _selectedInterests[entry.key] == item;
                                     return GestureDetector(
                                       onTap: () => setState(() {
-                                        if (_selectedInterests[entry.key] == item) {
+                                        if (_selectedInterests[entry.key] ==
+                                            item) {
                                           _selectedInterests[entry.key] = null;
                                         } else {
                                           _selectedInterests[entry.key] = item;
@@ -135,8 +196,8 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
                                           child: Text(
                                             item,
                                             textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontSize: 11,
+                                            style: _inputTextStyle.copyWith(
+                                              fontSize: 14,
                                               fontWeight: FontWeight.w600,
                                               color: isSelected
                                                   ? Colors.white
@@ -156,10 +217,9 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
                       if (_submitError != null) ...[
                         Text(
                           _submitError!,
-                          style: const TextStyle(
-                            color: Color(0xFFFFD8D8),
+                          style: _inputTextStyle.copyWith(
                             fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFFFFD8D8),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -186,31 +246,29 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Pick your interests',
-            style: TextStyle(
+            style: _inputTextStyle.copyWith(
               fontSize: 20,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
               color: AppColors.textDark,
-              decoration: TextDecoration.underline,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             "We'll recommend people you have more in common with",
-            style: TextStyle(
+            style: _inputTextStyle.copyWith(
               fontSize: 12,
-              fontWeight: FontWeight.w400,
-              color: Color(0xFF636363),
+              color: const Color(0xFF636363),
             ),
           ),
         ],
@@ -286,7 +344,7 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
       if (!mounted) return;
       setState(() {
         _submitError =
-        'Cannot connect to backend. Ensure Django is running on ${ApiConfig.baseUrl}.';
+            'Cannot connect to backend. Ensure Django is running on ${ApiConfig.baseUrl}.';
       });
     } finally {
       if (mounted) {
@@ -355,8 +413,8 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
       height: 67,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF656565),
+          backgroundColor: _continueButtonColor,
+          foregroundColor: Colors.white,
           elevation: 3,
           shadowColor: Colors.black26,
           shape: RoundedRectangleBorder(
@@ -370,18 +428,13 @@ class _Step6InterestsScreenState extends State<Step6InterestsScreen> {
                 height: 22,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Color(0xFF656565),
+                  color: Colors.white,
                 ),
               )
             : const Text(
                 'CONTINUE',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
-                  color: Color(0xFF656565),
-                ),
-          ),
+                style: _continueButtonTextStyle,
+              ),
       ),
     );
   }
