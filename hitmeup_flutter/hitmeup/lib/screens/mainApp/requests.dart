@@ -21,7 +21,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
   static const TextStyle _profileNameTextStyle = TextStyle(
     fontFamily: 'Konkhmer Sleokchher',
     fontSize: 14,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w700,
     letterSpacing: 0,
     height: 1.0,
     color: Colors.white,
@@ -33,7 +33,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
     fontWeight: FontWeight.w400,
     letterSpacing: 0,
     height: 1.0,
-    color: Colors.black87,
+    color: Color(0xFFCCCCCC),
   );
 
   static const TextStyle _sectionTitleTextStyle = TextStyle(
@@ -48,7 +48,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
   static const TextStyle _cardNameTextStyle = TextStyle(
     fontFamily: 'Konkhmer Sleokchher',
     fontSize: 14,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w700,
     letterSpacing: 0,
     height: 1.0,
     color: Colors.white,
@@ -57,7 +57,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
   static const TextStyle _cardLevelTextStyle = TextStyle(
     fontFamily: 'Konkhmer Sleokchher',
     fontSize: 11,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w700,
     letterSpacing: 0,
     height: 1.0,
     color: Colors.white,
@@ -416,21 +416,6 @@ class _RequestsScreenState extends State<RequestsScreen> {
     }
   }
 
-  Future<void> _updateUserDiamonds(int userId, int newDiamondCount) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}/api/users/$userId/');
-    try {
-      await http
-          .patch(
-            uri,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'diamonds': newDiamondCount}),
-          )
-          .timeout(const Duration(seconds: 10));
-    } catch (_) {
-      // Silently ignore sync errors
-    }
-  }
-
   void _showRequestResultDialog(_FriendRequestCardData data, bool accepted) {
     showDialog(
       context: context,
@@ -613,23 +598,14 @@ class _RequestsScreenState extends State<RequestsScreen> {
                             Text(_currentUserName,
                                 style: _profileNameTextStyle),
                             const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: _profileLevelBackgroundColor,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(_currentUserLevel,
-                                  style: _profileLevelTextStyle),
-                            ),
+                            Text(_currentUserLevel,
+                                style: _profileLevelTextStyle),
                           ],
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerLeft,
+                    const Center(
                       child: Text('Get more friends',
                           style: _sectionTitleTextStyle),
                     ),
@@ -685,6 +661,8 @@ class _RequestsScreenState extends State<RequestsScreen> {
                                   final request = _incomingRequests[index];
                                   return _RequestCard(
                                     data: request,
+                                    cardNameTextStyle: _cardNameTextStyle,
+                                    cardLevelTextStyle: _cardLevelTextStyle,
                                     onAccept: () => _updateRequestStatus(
                                       request,
                                       'accepted',
@@ -729,8 +707,14 @@ class _RequestsScreenState extends State<RequestsScreen> {
 
 class _RequestCard extends StatelessWidget {
   const _RequestCard(
-      {required this.data, required this.onAccept, required this.onReject});
+      {required this.data,
+      required this.cardNameTextStyle,
+      required this.cardLevelTextStyle,
+      required this.onAccept,
+      required this.onReject});
   final _FriendRequestCardData data;
+  final TextStyle cardNameTextStyle;
+  final TextStyle cardLevelTextStyle;
   final VoidCallback onAccept;
   final VoidCallback onReject;
 
@@ -862,23 +846,9 @@ class _RequestCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('${data.name} (${data.age})',
-                      style: const TextStyle(
-                        fontFamily: 'Konkhmer Sleokchher',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.white,
-                        height: 1.0,
-                        letterSpacing: 0,
-                      )),
+                      style: cardNameTextStyle),
                   Text('Level ${data.level}',
-                      style: const TextStyle(
-                        fontFamily: 'Konkhmer Sleokchher',
-                        fontSize: 11,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.white,
-                        height: 1.0,
-                        letterSpacing: 0,
-                      )),
+                      style: cardLevelTextStyle),
                 ],
               ),
             ),

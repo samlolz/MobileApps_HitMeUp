@@ -43,12 +43,12 @@ class _Step3BirthdayScreenState extends State<Step3BirthdayScreen> {
     fontFamily: 'Konkhmer Sleokchher',
     fontSize: 19,
     fontWeight: FontWeight.w400,
-    color: Colors.white,
+    color: Color(0xFF656565),
     height: 1.0,
     letterSpacing: 0,
   );
 
-  static const Color _continueButtonColor = Color.fromRGBO(101, 101, 101, 1);
+  static const Color _continueButtonColor = Colors.white;
 
   bool _showOnProfile = false;
   DateTime _selectedDate =
@@ -182,7 +182,9 @@ class _Step3BirthdayScreenState extends State<Step3BirthdayScreen> {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: _continueButtonColor,
-          foregroundColor: Colors.white,
+          disabledBackgroundColor: _continueButtonColor,
+          foregroundColor: const Color(0xFF656565),
+          disabledForegroundColor: const Color(0xFF656565),
           elevation: 3,
           shadowColor: Colors.black26,
           shape: RoundedRectangleBorder(

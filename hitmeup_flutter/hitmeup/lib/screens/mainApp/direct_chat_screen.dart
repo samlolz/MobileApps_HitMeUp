@@ -44,7 +44,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     fontFamily: 'IBM Plex Sans Devanagari',
     fontSize: 10,
     fontWeight: FontWeight.w400,
-    height: 1.0,
     letterSpacing: 0,
     color: Colors.black87,
   );
@@ -65,6 +64,30 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     height: 1.0,
     letterSpacing: 0,
     color: Colors.white70,
+  );
+
+  static const TextStyle _pollQuestionTextStyle = TextStyle(
+    fontFamily: 'IBM Plex Sans Devanagari',
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    height: 1.0,
+    letterSpacing: 0,
+  );
+
+  static const TextStyle _pollOptionTextStyle = TextStyle(
+    fontFamily: 'IBM Plex Sans Devanagari',
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    height: 1.0,
+    letterSpacing: 0,
+  );
+
+  static const TextStyle _pollViewVotesTextStyle = TextStyle(
+    fontFamily: 'IBM Plex Sans Devanagari',
+    fontSize: 12,
+    fontWeight: FontWeight.w200,
+    height: 1.0,
+    letterSpacing: 0,
   );
 
   final TextEditingController _controller = TextEditingController();
@@ -1352,16 +1375,11 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                               children: [
                                 Text(
                                   'Ask help to Chat.AI',
-                                  style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white),
+                                  style: _chatAiTitleTextStyle,
                                 ),
                                 Text(
                                   'ask AI to help you with itinerary or others...',
-                                  style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.white70),
+                                  style: _chatAiSubtitleTextStyle,
                                 ),
                               ],
                             ),
@@ -1501,10 +1519,10 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
           ),
           const SizedBox(width: 12),
           Text(widget.chat.name,
-              style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black)),
+              style: _chatNameTextStyle.copyWith(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.black)),
         ],
       ),
     );
@@ -1534,6 +1552,11 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         Expanded(
           child: TextField(
             controller: _controller,
+            keyboardType: TextInputType.multiline,
+            textInputAction: TextInputAction.newline,
+            minLines: 1,
+            maxLines: null,
+            textAlignVertical: TextAlignVertical.top,
             decoration: const InputDecoration(
               hintText: 'Message',
               hintStyle: TextStyle(color: Colors.black38),
@@ -1673,11 +1696,14 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                     Padding(
                       padding:
                           const EdgeInsets.only(bottom: 4),
-                      child: Text(sender,
-                          style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87)),
+                      child: Text(
+                        sender,
+                        style: _chatNameTextStyle.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
                     ),
                   if (imageUrl != null && imageUrl.isNotEmpty) ...[
                     ClipRRect(
@@ -1698,6 +1724,20 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                       ),
                     ),
                     if (text.isNotEmpty) const SizedBox(height: 8),
+                    if (voiceUrl == null || voiceUrl.isEmpty) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            time,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                   if (voiceUrl != null && voiceUrl.isNotEmpty) ...[
                     Container(
@@ -1721,7 +1761,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Expanded(
+                          const Expanded(
                             child: Text(
                               'Voice message',
                               maxLines: 1,
@@ -1729,7 +1769,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: isMe ? Colors.white : Colors.black87,
+                                color: Colors.black,
                               ),
                             ),
                           ),
@@ -1740,9 +1780,9 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                       const SizedBox(height: 8),
                       Text(
                         text,
-                        style: TextStyle(
+                        style: _chatMessageTextStyle.copyWith(
                           fontSize: 13,
-                          color: isMe ? Colors.white : Colors.black87,
+                          color: Colors.black,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -1760,7 +1800,8 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                       ],
                     ),
                   ],
-                  if (voiceUrl == null || voiceUrl.isEmpty)
+                  if ((voiceUrl == null || voiceUrl.isEmpty) &&
+                      (imageUrl == null || imageUrl.isEmpty))
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment:
@@ -1770,19 +1811,17 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                           Flexible(
                             child: Text(
                               text,
-                              style: TextStyle(
+                              style: _chatMessageTextStyle.copyWith(
                                 fontSize: 13,
-                                color: isMe ? Colors.white : Colors.black87,
+                                color: Colors.black,
                               ),
                             ),
                           ),
                         if (text.isNotEmpty) const SizedBox(width: 8),
                         Text(time,
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 10,
-                                color: isMe
-                                    ? Colors.white70
-                                    : Colors.black45)),
+                                color: Colors.black54)),
                       ],
                     ),
                 ],
@@ -2082,6 +2121,8 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
               : int.tryParse(option['voteCount'].toString()) ?? 0),
     );
 
+          final contentColor = isMe ? Colors.white : Colors.black;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -2127,11 +2168,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                     ),
                   Text(
                     question,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
+                    style: _pollQuestionTextStyle.copyWith(color: contentColor),
                   ),
                   const SizedBox(height: 14),
                   ...options.map((option) {
@@ -2193,20 +2230,20 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                                       Expanded(
                                         child: Text(
                                           optionName,
-                                          style: const TextStyle(
+                                          style: _pollOptionTextStyle.copyWith(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
-                                            color: Colors.black,
+                                            color: contentColor,
                                           ),
                                         ),
                                       ),
                                       if (hasVoted)
                                         Text(
                                           '$voteCount',
-                                          style: const TextStyle(
+                                          style: _pollOptionTextStyle.copyWith(
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.black,
+                                            color: contentColor,
                                           ),
                                         ),
                                     ],
@@ -2240,10 +2277,10 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                     Container(height: 2, color: Colors.white),
                     TextButton(
                         onPressed: () => _showPollVotesDialog(poll),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           'View votes',
-                          style: TextStyle(
+                          style: _pollViewVotesTextStyle.copyWith(
                             color: Colors.black,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,

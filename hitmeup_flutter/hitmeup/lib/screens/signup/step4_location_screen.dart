@@ -61,12 +61,12 @@ class _Step4LocationScreenState extends State<Step4LocationScreen> {
     fontFamily: 'Konkhmer Sleokchher',
     fontSize: 19,
     fontWeight: FontWeight.w400,
-    color: Colors.white,
+    color: Color(0xFF656565),
     height: 1.0,
     letterSpacing: 0,
   );
 
-  static const Color _continueButtonColor = Color.fromRGBO(101, 101, 101, 1);
+  static const Color _continueButtonColor = Colors.white;
 
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
@@ -367,7 +367,9 @@ class _Step4LocationScreenState extends State<Step4LocationScreen> {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: _continueButtonColor,
-          foregroundColor: Colors.white,
+          disabledBackgroundColor: _continueButtonColor,
+          foregroundColor: const Color(0xFF656565),
+          disabledForegroundColor: const Color(0xFF656565),
           elevation: 3,
           shadowColor: Colors.black26,
           shape: RoundedRectangleBorder(

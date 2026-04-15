@@ -302,12 +302,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   return Column(
                                     children: [
                                       Container(
+                                        height: 32,
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 8),
                                         decoration: BoxDecoration(
                                           color: Colors.white,
                                           borderRadius:
-                                              BorderRadius.circular(8),
+                                              BorderRadius.circular(6),
                                           border: Border.all(
                                             color: const Color(0xFF448AFF),
                                             width: 1.5,
@@ -315,12 +316,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         ),
                                         child: TextField(
                                           controller: controller,
+                                          textAlignVertical:
+                                              TextAlignVertical.center,
                                           decoration: const InputDecoration(
                                             isDense: true,
                                             border: InputBorder.none,
                                             contentPadding:
                                                 EdgeInsets.symmetric(
-                                                    vertical: 5),
+                                                    vertical: 7),
                                           ),
                                           style: _inputTextStyle,
                                         ),
@@ -725,7 +728,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      _formatBirthday(_selectedBirthday),
+                      _formatBirthdayForDisplay(_selectedBirthday),
                       style: _inputTextStyle,
                     ),
                   ),
@@ -934,14 +937,81 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   DateTime _parseBirthday(String value) {
-    final parsed = DateTime.tryParse(value);
-    if (parsed != null) {
-      return parsed;
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return DateTime(2002, 5, 8);
     }
+
+    final datePart = trimmed.contains('T') ? trimmed.split('T').first : trimmed;
+    final parsed = DateTime.tryParse(datePart);
+    if (parsed != null) {
+      return DateTime(parsed.year, parsed.month, parsed.day);
+    }
+
+    final parts = datePart.split(RegExp(r'\s+'));
+    if (parts.length == 3) {
+      final day = int.tryParse(parts[0]);
+      final month = _monthNumberFromName(parts[1]);
+      final year = int.tryParse(parts[2]);
+      if (day != null && month != null && year != null) {
+        return DateTime(year, month, day);
+      }
+    }
+
     return DateTime(2002, 5, 8);
   }
 
-  String _formatBirthday(DateTime value) {
+  int? _monthNumberFromName(String monthName) {
+    switch (monthName.toLowerCase()) {
+      case 'january':
+        return 1;
+      case 'february':
+        return 2;
+      case 'march':
+        return 3;
+      case 'april':
+        return 4;
+      case 'may':
+        return 5;
+      case 'june':
+        return 6;
+      case 'july':
+        return 7;
+      case 'august':
+        return 8;
+      case 'september':
+        return 9;
+      case 'october':
+        return 10;
+      case 'november':
+        return 11;
+      case 'december':
+        return 12;
+      default:
+        return null;
+    }
+  }
+
+  String _formatBirthdayForDisplay(DateTime value) {
+    const monthNames = <String>[
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    return '${value.day} ${monthNames[value.month - 1]} ${value.year}';
+  }
+
+  String _formatBirthdayForApi(DateTime value) {
     final month = value.month.toString().padLeft(2, '0');
     final day = value.day.toString().padLeft(2, '0');
     return '${value.year}-$month-$day';
@@ -1112,7 +1182,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     final payload = <String, String>{
       'name': _nameController.text.trim(),
-      'birthday': _formatBirthday(_selectedBirthday),
+      'birthday': _formatBirthdayForApi(_selectedBirthday),
       'gender': _selectedGender,
       'wanttomeet': _selectedWantToMeet,
       'location': _locationController.text.trim(),

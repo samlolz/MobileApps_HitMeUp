@@ -1370,39 +1370,40 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                         margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
-                          color: AppColors.blueBottom,
+                          color: const Color(0xFFFF4081),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
                           children: [
                             Image.asset(
                               'assets/AIBrain.png',
-                              width: 28,
-                              height: 28,
+                              width: 32,
+                              height: 32,
                               fit: BoxFit.contain,
                               color: Colors.white,
                               errorBuilder: (_, __, ___) => const Icon(
                                 Icons.psychology_rounded,
                                 color: Colors.white,
-                                size: 28,
+                                size: 32,
                               ),
                             ),
                             const SizedBox(width: 12),
                             Container(width: 1, height: 40, color: Colors.white),
                             const SizedBox(width: 12),
-                            const Column(
+                            Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text('Ask help to Chat.AI',
+                                const Text('Ask help to Chat.AI',
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white)),
                                 Text(
                                     'ask AI to help you with itinerary or others...',
-                                    style: TextStyle(
-                                        fontSize: 10, color: Colors.white70)),
+                                    style: _pollViewVotesTextStyle.copyWith(
+                                      color: Colors.white70,
+                                    )),
                               ],
                             ),
                           ],
@@ -1624,6 +1625,11 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
         Expanded(
           child: TextField(
             controller: _controller,
+            keyboardType: TextInputType.multiline,
+            textInputAction: TextInputAction.newline,
+            minLines: 1,
+            maxLines: null,
+            textAlignVertical: TextAlignVertical.top,
             decoration: const InputDecoration(
               hintText: 'Message',
               hintStyle: TextStyle(color: Colors.black38),
@@ -1778,6 +1784,18 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                       ),
                     ),
                     if (text.isNotEmpty) const SizedBox(height: 8),
+                    if (voiceUrl == null || voiceUrl.isEmpty) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            time,
+                            style: const TextStyle(
+                                fontSize: 10, color: Colors.black45),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                   if (voiceUrl != null && voiceUrl.isNotEmpty) ...[
                     Container(
@@ -1823,9 +1841,9 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                       const SizedBox(height: 8),
                       Text(
                         text,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 13,
-                            color: isMe ? Colors.white : Colors.black87),
+                            color: Colors.black),
                       ),
                       const SizedBox(height: 8),
                     ],
@@ -1838,7 +1856,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                       ],
                     ),
                   ],
-                  if (voiceUrl == null || voiceUrl.isEmpty)
+                  if ((voiceUrl == null || voiceUrl.isEmpty) &&
+                      (imageUrl == null || imageUrl.isEmpty))
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -1847,17 +1866,16 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                           Flexible(
                             child: Text(
                               text,
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 13,
-                                  color: isMe ? Colors.white : Colors.black87),
+                                  color: Colors.black),
                             ),
                           ),
                         if (text.isNotEmpty) const SizedBox(width: 8),
                         Text(time,
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 10,
-                                color:
-                                    isMe ? Colors.white70 : Colors.black45)),
+                                color: Colors.black54)),
                       ],
                     ),
                 ],
@@ -2302,7 +2320,7 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                     const SizedBox(height: 6),
                     Container(height: 2, color: Colors.white),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () => _showPollVotesDialog(poll),
                       child: const Center(
                         child: Text('View votes', style: TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w500)),
                       ),

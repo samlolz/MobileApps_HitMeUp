@@ -517,6 +517,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _ProfileInfoRow(
                           label: 'Who do you want to meet?',
                           value: _wantToMeet,
+                          alignTop: true,
+                          centerValueY: true,
                           labelStyle: _profileInfoLabelStyle,
                           valueStyle: _profileInfoValueStyle,
                         ),
@@ -732,6 +734,7 @@ class _ProfileInfoRow extends StatelessWidget {
     required this.label,
     required this.value,
     this.alignTop = false,
+    this.centerValueY = false,
     required this.labelStyle,
     required this.valueStyle,
   });
@@ -739,43 +742,61 @@ class _ProfileInfoRow extends StatelessWidget {
   final String label;
   final String value;
   final bool alignTop;
+  final bool centerValueY;
   final TextStyle labelStyle;
   final TextStyle valueStyle;
 
   @override
   Widget build(BuildContext context) {
+    const effectiveLabelStyle = TextStyle(
+      fontSize: 18,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFF202020),
+    );
+    final effectiveValueStyle = TextStyle(
+      fontSize: 18,
+      fontWeight: FontWeight.w500,
+      color: Colors.black.withOpacity(0.52),
+    );
+
     return Row(
       crossAxisAlignment:
-          alignTop ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+          centerValueY ? CrossAxisAlignment.center : CrossAxisAlignment.start,
       children: [
         SizedBox(
           width: 132,
-          child: Padding(
-            padding: EdgeInsets.only(top: alignTop ? 2 : 0),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF202020),
-              ),
-            ),
+          child: Text(
+            label,
+            softWrap: true,
+            style: effectiveLabelStyle,
           ),
         ),
         Expanded(
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                height: 1.25,
-                fontWeight: FontWeight.w500,
-                color: Colors.black.withOpacity(0.52),
-              ),
-            ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              var valueTopPadding = 0.0;
+
+              if (alignTop && !centerValueY) {
+                final painter = TextPainter(
+                  text: TextSpan(text: label, style: effectiveLabelStyle),
+                  textDirection: TextDirection.ltr,
+                )..layout(maxWidth: 132);
+
+                final lineCount = painter.computeLineMetrics().length;
+                if (lineCount > 1) {
+                  final lineHeight = painter.preferredLineHeight;
+                  valueTopPadding = (lineCount - 1) * lineHeight;
+                }
+              }
+
+              return Padding(
+                padding: EdgeInsets.only(top: valueTopPadding),
+                child: Text(
+                  value,
+                  style: effectiveValueStyle,
+                ),
+              );
+            },
           ),
         ),
       ],

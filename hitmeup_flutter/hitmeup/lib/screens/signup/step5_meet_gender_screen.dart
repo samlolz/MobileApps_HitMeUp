@@ -49,10 +49,10 @@ class _Step5MeetGenderScreenState extends State<Step5MeetGenderScreen> {
     fontWeight: FontWeight.w400,
     letterSpacing: 0,
     height: 1.0,
-    color: Colors.white,
+    color: Color(0xFF656565),
   );
 
-  static const Color _continueButtonColor = Color.fromRGBO(101, 101, 101, 1);
+  static const Color _continueButtonColor = Colors.white;
 
   String? _selected;
 
@@ -144,7 +144,9 @@ class _Step5MeetGenderScreenState extends State<Step5MeetGenderScreen> {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: _continueButtonColor,
-          foregroundColor: Colors.white,
+          disabledBackgroundColor: _continueButtonColor,
+          foregroundColor: const Color(0xFF656565),
+          disabledForegroundColor: const Color(0xFF656565),
           elevation: 3,
           shadowColor: Colors.black26,
           shape: RoundedRectangleBorder(

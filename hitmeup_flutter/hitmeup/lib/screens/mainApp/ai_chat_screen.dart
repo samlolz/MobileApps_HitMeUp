@@ -1,15 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:record/record.dart';
 
 import '../../services/auth_session.dart';
 import '../../services/chat_service.dart';
@@ -35,18 +30,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
   static const int _messagePageSize = 20;
   static const double _topLoadThreshold = 120.0;
   static const String _assistantTypingMarker = '__assistant_typing__';
-  static const String _galleryPermissionMessage =
-      'Please allow gallery access so you can choose an image to send.';
-  static const String _microphonePermissionMessage =
-      'Please allow microphone access so you can record voice messages.';
 
   static const TextStyle _chatBubbleTextStyle = TextStyle(
-    fontFamily: 'Poppins',
-    fontWeight: FontWeight.w600,
-    fontSize: 11,
-    height: 1.0,
-    letterSpacing: 0,
-    color: Colors.black87,
+    fontSize: 13,
+    color: Colors.black,
   );
 
   static const TextStyle _chatInputTextStyle = TextStyle(
@@ -69,21 +56,13 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final AudioRecorder _audioRecorder = AudioRecorder();
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final ImagePicker _imagePicker = ImagePicker();
 
-  bool _showAttachMenu = false;
   bool _isLoading = true;
   bool _isInitializingChat = true;
   bool _isSending = false;
-  bool _isPickingImage = false;
   bool _isLoadingMoreMessages = false;
   bool _hasMoreOlderMessages = true;
-  bool _isRecordingVoice = false;
-  bool _isSendingVoice = false;
-  Duration _voiceRecordDuration = Duration.zero;
-  Timer? _voiceRecordTimer;
   String? _playingVoiceUrl;
   bool _isVoicePlaying = false;
 
@@ -124,9 +103,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
   @override
   void dispose() {
     _scrollController.removeListener(_handleScroll);
-    _voiceRecordTimer?.cancel();
-    unawaited(_audioRecorder.cancel());
-    unawaited(_audioRecorder.dispose());
     unawaited(_audioPlayer.stop());
     unawaited(_audioPlayer.dispose());
     _controller.dispose();
@@ -441,463 +417,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
     }
   }
 
-  Future<void> _pickAndSendGalleryImage() async {
-    if (_isPickingImage) {
-      return;
-    }
-
-    if (_showAttachMenu) {
-      setState(() {
-        _showAttachMenu = false;
-      });
-    }
-
-    try {
-      final hasPermission = await _ensureGalleryPermission();
-      if (!hasPermission || !mounted) {
-        return;
-      }
-
-      setState(() {
-        _isPickingImage = true;
-      });
-
-      final pickedFile = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-        maxWidth: 1440,
-      );
-
-      if (pickedFile == null || !mounted) {
-        return;
-      }
-
-      final userId = AuthSession.instance.userId;
-      final chatId = _aiChatId;
-      if (userId == null || chatId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Not logged in or AI chat unavailable')),
-        );
-        return;
-      }
-
-      final imageBytes = await pickedFile.readAsBytes();
-      final sentMessage = await ChatService.sendAiImageMessage(
-        chatId: chatId,
-        senderId: userId,
-        imageBytes: imageBytes,
-        fileName: pickedFile.name,
-      );
-
-      if (mounted) {
-        setState(() {
-          _messages.add(sentMessage);
-          _insertAssistantTypingPlaceholder();
-        });
-        _scrollToBottomWithSettling();
-      }
-
-      await _sendAssistantReplyFor();
-    } on MissingPluginException {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Image picker plugin is not available on this platform.')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send image: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isPickingImage = false;
-          _isSending = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _pickAndSendCameraImage() async {
-    if (_isPickingImage) {
-      return;
-    }
-
-    if (_showAttachMenu) {
-      setState(() {
-        _showAttachMenu = false;
-      });
-    }
-
-    if (mounted) {
-      setState(() {
-        _isSending = true;
-      });
-    }
-
-    try {
-      setState(() {
-        _isPickingImage = true;
-      });
-
-      final pickedFile = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 85,
-        maxWidth: 1440,
-      );
-
-      if (pickedFile == null || !mounted) {
-        return;
-      }
-
-      final userId = AuthSession.instance.userId;
-      final chatId = _aiChatId;
-      if (userId == null || chatId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Not logged in or AI chat unavailable')),
-        );
-        return;
-      }
-
-      final imageBytes = await pickedFile.readAsBytes();
-      final sentMessage = await ChatService.sendAiImageMessage(
-        chatId: chatId,
-        senderId: userId,
-        imageBytes: imageBytes,
-        fileName: pickedFile.name,
-      );
-
-      if (mounted) {
-        setState(() {
-          _messages.add(sentMessage);
-          _insertAssistantTypingPlaceholder();
-        });
-        _scrollToBottomWithSettling();
-      }
-
-      await _sendAssistantReplyFor();
-    } on MissingPluginException {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Camera plugin is not available on this platform.')),
-        );
-      }
-    } on PlatformException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not open camera: ${e.message ?? e.code}')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to capture image: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isPickingImage = false;
-          _isSending = false;
-        });
-      }
-    }
-  }
-
-  Future<bool> _ensureGalleryPermission() async {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      var photosStatus = await Permission.photos.status;
-      if (photosStatus.isGranted || photosStatus.isLimited) {
-        return true;
-      }
-      if (photosStatus.isDenied || photosStatus.isRestricted) {
-        photosStatus = await Permission.photos.request();
-      }
-      if (photosStatus.isGranted || photosStatus.isLimited) {
-        return true;
-      }
-
-      var storageStatus = await Permission.storage.status;
-      if (storageStatus.isGranted) {
-        return true;
-      }
-      if (storageStatus.isDenied || storageStatus.isRestricted) {
-        storageStatus = await Permission.storage.request();
-      }
-      if (storageStatus.isGranted) {
-        return true;
-      }
-
-      return _showGalleryPermissionSettingsDialog();
-    }
-
-    var status = await Permission.photos.status;
-    if (status.isGranted || status.isLimited) {
-      return true;
-    }
-    if (status.isDenied || status.isRestricted) {
-      status = await Permission.photos.request();
-    }
-    if (status.isGranted || status.isLimited) {
-      return true;
-    }
-
-    return _showGalleryPermissionSettingsDialog();
-  }
-
-  Future<bool> _showGalleryPermissionSettingsDialog() async {
-    final shouldOpenSettings = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Gallery permission needed'),
-          content: const Text(_galleryPermissionMessage),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Open settings'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (shouldOpenSettings == true) {
-      try {
-        await openAppSettings();
-      } on MissingPluginException {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Settings cannot be opened on this platform.')),
-          );
-        }
-      }
-    }
-
-    return false;
-  }
-
-  Future<bool> _ensureMicrophonePermission() async {
-    var status = await Permission.microphone.status;
-    if (status.isGranted) {
-      return true;
-    }
-    if (status.isDenied || status.isRestricted) {
-      status = await Permission.microphone.request();
-    }
-    if (status.isGranted) {
-      return true;
-    }
-
-    return _showMicrophonePermissionSettingsDialog();
-  }
-
-  Future<bool> _showMicrophonePermissionSettingsDialog() async {
-    final shouldOpenSettings = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Microphone permission needed'),
-          content: const Text(_microphonePermissionMessage),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Open settings'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (shouldOpenSettings == true) {
-      try {
-        await openAppSettings();
-      } on MissingPluginException {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Settings cannot be opened on this platform.')),
-          );
-        }
-      }
-    }
-
-    return false;
-  }
-
-  Future<void> _startVoiceRecording() async {
-    if (_isRecordingVoice || _isSendingVoice || _isSending) {
-      return;
-    }
-
-    FocusScope.of(context).unfocus();
-
-    final hasPermission = await _ensureMicrophonePermission();
-    if (!hasPermission || !mounted) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Microphone permission is required to record voice messages.')),
-        );
-      }
-      return;
-    }
-
-    final canRecord = await _audioRecorder.hasPermission();
-    if (!canRecord || !mounted) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to access microphone.')),
-        );
-      }
-      return;
-    }
-
-    if (_showAttachMenu) {
-      setState(() {
-        _showAttachMenu = false;
-      });
-    }
-
-    if (mounted) {
-      setState(() {
-        _isSending = true;
-      });
-    }
-
-    try {
-      final recordingPath =
-          '${Directory.systemTemp.path}${Platform.pathSeparator}ai_voice_${DateTime.now().microsecondsSinceEpoch}.m4a';
-      await _audioRecorder.start(
-        const RecordConfig(
-          encoder: AudioEncoder.aacLc,
-          bitRate: 128000,
-          sampleRate: 44100,
-        ),
-        path: recordingPath,
-      );
-
-      _voiceRecordTimer?.cancel();
-      setState(() {
-        _isRecordingVoice = true;
-        _voiceRecordDuration = Duration.zero;
-      });
-
-      _voiceRecordTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (!mounted || !_isRecordingVoice) {
-          return;
-        }
-        setState(() {
-          _voiceRecordDuration += const Duration(seconds: 1);
-        });
-      });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to start recording: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _deleteVoiceRecording() async {
-    try {
-      if (await _audioRecorder.isRecording()) {
-        await _audioRecorder.cancel();
-      }
-    } catch (_) {
-      // Best effort cleanup.
-    }
-
-    _voiceRecordTimer?.cancel();
-    if (mounted) {
-      setState(() {
-        _isRecordingVoice = false;
-        _isSendingVoice = false;
-        _voiceRecordDuration = Duration.zero;
-      });
-    }
-  }
-
-  Future<void> _sendVoiceRecording() async {
-    if (!_isRecordingVoice || _isSendingVoice) {
-      return;
-    }
-
-    final userId = AuthSession.instance.userId;
-    final chatId = _aiChatId;
-    if (userId == null || chatId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Not logged in or AI chat unavailable')),
-      );
-      return;
-    }
-
-    setState(() {
-      _isSending = true;
-    });
-    setState(() {
-      _isSendingVoice = true;
-    });
-
-    try {
-      final path = await _audioRecorder.stop();
-      _voiceRecordTimer?.cancel();
-
-      if (path == null || path.isEmpty) {
-        throw Exception('No recording captured.');
-      }
-
-      final audioBytes = await File(path).readAsBytes();
-      final fileName = path.split(Platform.pathSeparator).last;
-
-      final sentMessage = await ChatService.sendAiVoiceMessage(
-        chatId: chatId,
-        senderId: userId,
-        audioBytes: audioBytes,
-        fileName: fileName,
-      );
-
-      if (mounted) {
-        setState(() {
-          _messages.add(sentMessage);
-          _isRecordingVoice = false;
-          _isSendingVoice = false;
-          _voiceRecordDuration = Duration.zero;
-          _insertAssistantTypingPlaceholder();
-        });
-        _scrollToBottomWithSettling();
-      }
-
-      await _sendAssistantReplyFor();
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isRecordingVoice = false;
-          _isSendingVoice = false;
-          _voiceRecordDuration = Duration.zero;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send voice recording: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSending = false;
-        });
-      }
-    }
-  }
-
   String _resolveMediaUrl(String rawUrl) {
     if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
       return rawUrl;
@@ -1198,7 +717,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
       'isMe': isMe,
       'isFromAI': isFromAI,
       'recommendedUserIds': recommendationIds,
-      'time': _formatTime(msg['created_at'] ?? ''),
     };
   }
 
@@ -1294,7 +812,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (_showAttachMenu && !_isRecordingVoice) const SizedBox(height: 86),
                     Container(
                       color: Colors.white,
                       padding: EdgeInsets.only(
@@ -1310,55 +827,11 @@ class _AiChatScreenState extends State<AiChatScreen> {
                           borderRadius: BorderRadius.circular(28),
                           border: Border.all(color: Colors.grey.shade300),
                         ),
-                        child: _isRecordingVoice ? _buildVoiceRecorderBar() : _buildTextInputBar(),
+                        child: _buildTextInputBar(),
                       ),
                     ),
                   ],
                 ),
-                if (_showAttachMenu && !_isRecordingVoice)
-                  Positioned(
-                    bottom: 60 + MediaQuery.of(context).padding.bottom,
-                    left: 16,
-                    child: AnimatedOpacity(
-                      opacity: 1.0,
-                      duration: const Duration(milliseconds: 250),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          gradient: const LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Color(0xFF448AFF), Color(0xFFFF4081)],
-                            stops: [0.5, 1.0],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildAttachItem(
-                              'assets/galleryIcon.png',
-                              'Gallery',
-                              onTap: _pickAndSendGalleryImage,
-                            ),
-                            const SizedBox(height: 6),
-                            _buildAttachItem(
-                              'assets/cameraIcon.png',
-                              'Camera',
-                              onTap: _pickAndSendCameraImage,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
               ],
             ),
           ],
@@ -1415,24 +888,14 @@ class _AiChatScreenState extends State<AiChatScreen> {
   Widget _buildTextInputBar() {
     return Row(
       children: [
-        GestureDetector(
-          onTap: () => setState(() => _showAttachMenu = !_showAttachMenu),
-          child: AnimatedRotation(
-            turns: _showAttachMenu ? 0.125 : 0,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.black, width: 2)),
-              child: const Icon(Icons.add, size: 20, color: Colors.black),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
         Expanded(
           child: TextField(
             controller: _controller,
+            keyboardType: TextInputType.multiline,
+            textInputAction: TextInputAction.newline,
+            minLines: 1,
+            maxLines: null,
+            textAlignVertical: TextAlignVertical.top,
             decoration: const InputDecoration(
               hintText: 'Ask Chat.AI anything...',
               hintStyle: _chatInputHintTextStyle,
@@ -1441,16 +904,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
               contentPadding: EdgeInsets.zero,
             ),
             style: _chatInputTextStyle,
-            onSubmitted: (_) => _sendMessage(),
-          ),
-        ),
-        const SizedBox(width: 8),
-        GestureDetector(
-          onTap: _isSendingVoice ? null : _startVoiceRecording,
-          child: Icon(
-            Icons.mic,
-            color: _isSendingVoice ? Colors.black26 : Colors.black,
-            size: 24,
           ),
         ),
         const SizedBox(width: 8),
@@ -1466,53 +919,11 @@ class _AiChatScreenState extends State<AiChatScreen> {
     );
   }
 
-  Widget _buildVoiceRecorderBar() {
-    return Row(
-      children: [
-        const Icon(Icons.graphic_eq, color: Colors.redAccent, size: 22),
-        const SizedBox(width: 10),
-        Text(
-          _formatDuration(_voiceRecordDuration),
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-        ),
-        const Spacer(),
-        GestureDetector(
-          onTap: _deleteVoiceRecording,
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
-          ),
-        ),
-        const SizedBox(width: 8),
-        GestureDetector(
-          onTap: _isSendingVoice ? null : _sendVoiceRecording,
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.blueBottom,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Icon(
-              Icons.send_rounded,
-              color: _isSendingVoice ? Colors.white54 : Colors.white,
-              size: 18,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildMessage(Map<String, dynamic> msg) {
     final isMe = msg['isMe'] as bool;
     final isFromAI = msg['isFromAI'] as bool? ?? false;
     final isTyping = msg['isTyping'] as bool? ?? false;
     final text = msg['text'] as String? ?? '';
-    final time = msg['time'] as String? ?? '';
     final imageUrl = msg['image'] as String?;
     final voiceUrl = msg['voiceRecording'] as String?;
 
@@ -1606,16 +1017,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                  ],
-                  if (time.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        time,
-                        style: const TextStyle(fontSize: 9, color: Colors.black45),
                       ),
                     ),
                   ],
@@ -1793,39 +1194,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
     );
   }
 
-  Widget _buildAttachItem(String imageAssetPath, String label, {VoidCallback? onTap}) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        width: 99,
-        height: 24,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(width: 8),
-            Image.asset(
-              imageAssetPath,
-              width: 13,
-              height: 13,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black87),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _AiTypingIndicator extends StatefulWidget {

@@ -268,7 +268,9 @@ class _Step1IntroScreenState extends State<Step1IntroScreen> {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
+          disabledBackgroundColor: Colors.white,
           foregroundColor: const Color(0xFF656565),
+          disabledForegroundColor: const Color(0xFF656565),
           elevation: 3,
           shadowColor: Colors.black26,
           shape: RoundedRectangleBorder(
